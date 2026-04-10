@@ -17,9 +17,9 @@ function main {
     export TUNNEL_PORT="6874"
   fi
 
-  export ECS_CLUSTER_NAME="oppijanumerorekisteri"
-  export SERVICE_NAME="OppijanumerorekisteriBastion"
-  export DB_SECRET="OppijanumerorekisteriDatabaseSecret"
+  export ECS_CLUSTER_NAME="tiedotuspalvelu"
+  export SERVICE_NAME="TiedotuspalveluBastion"
+  export DB_SECRET="TiedotuspalveluDatabaseSecret"
 
   start_tunnel
   sleep 3
@@ -33,7 +33,7 @@ function start_pg_restore {
 
   info "Connecting to localhost:$TUNNEL_PORT"
   cd "$repo"
-  PGPASSWORD=$password pg_restore --user "$username" --host localhost --port $TUNNEL_PORT --dbname oppijanumerorekisteri "$@"
+  PGPASSWORD=$password pg_restore --user "$username" --host localhost --port $TUNNEL_PORT --dbname tiedotuspalvelu "$@"
 }
 
 function start_tunnel {

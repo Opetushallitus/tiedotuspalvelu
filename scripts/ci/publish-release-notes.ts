@@ -1,6 +1,6 @@
 import {execSync} from 'node:child_process';
 
-const REPOSITORY_NAME = "oppijanumerorekisteri"
+const REPOSITORY_NAME = "tiedotuspalvelu"
 const SLACK_NOTIFICATIONS_CHANNEL_WEBHOOK_URL = process.env.SLACK_NOTIFICATIONS_CHANNEL_WEBHOOK_URL as string
 const ENVIRONMENT_NAME = process.env.ENVIRONMENT_NAME as string
 
@@ -30,7 +30,7 @@ function formatSlackMessages(commits: string[], header?: string): SlackMessage[]
       blocks.push(makeSlackHeader(header))
     }
     blocks.push(makeSlackMarkdown(fullText))
-    return [{ blocks }]
+    return [{blocks}]
   }
 }
 
@@ -40,10 +40,11 @@ type SlackMessageBlockMarkdown = { type: "section", text: { type: "mrkdwn", text
 type SlackMessageBlock = SlackMessageBlockHeader | SlackMessageBlockMarkdown
 
 function makeSlackHeader(text: string): SlackMessageBlockHeader {
-  return { type: "header", text: { type: "plain_text", text } }
+  return {type: "header", text: {type: "plain_text", text}}
 }
+
 function makeSlackMarkdown(text: string): SlackMessageBlockMarkdown {
-  return { type: "section", text: { type: "mrkdwn", text } }
+  return {type: "section", text: {type: "mrkdwn", text}}
 }
 
 async function sendToSlack(message: SlackMessage): Promise<void> {

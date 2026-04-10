@@ -1,2 +1,0 @@
-DROP INDEX IF EXISTS unique_kotikunta_historia_henkilo_id_idx;
-DROP INDEX IF EXISTS unique_turvakielto_kotikunta_historia_henkilo_id_idx;

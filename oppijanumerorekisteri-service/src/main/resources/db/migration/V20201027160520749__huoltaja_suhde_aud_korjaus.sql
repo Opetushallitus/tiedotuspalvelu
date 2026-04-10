@@ -1,2 +1,0 @@
--- aikaisempi huoltajuustyypin pudottaminen taulusta henkilo_huoltaja_suhde tekemättä auditointitauluun!
-ALTER TABLE henkilo_huoltaja_suhde_aud DROP COLUMN huoltajuustyyppi_koodi;

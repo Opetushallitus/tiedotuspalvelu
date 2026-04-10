@@ -21,11 +21,11 @@ function print_pending_commits {
   echo "# Commits for hahtuva -> dev"
   log_cmd origin/green-hahtuva...origin/green-dev && echo
 
-  echo "# Commits for origin/master-> hahtuva"
-  log_cmd origin/master...origin/green-hahtuva && echo
+  echo "# Commits for origin/main-> hahtuva"
+  log_cmd origin/main...origin/green-hahtuva && echo
 
-  echo "# Commits for master -> origin/master"
-  log_cmd master...origin/master && echo
+  echo "# Commits for main -> origin/main"
+  log_cmd main...origin/main && echo
 }
 
 print_pending_commits "$@" | less --no-init --quit-if-one-screen --RAW-CONTROL-CHARS

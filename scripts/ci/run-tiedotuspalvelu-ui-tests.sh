@@ -15,7 +15,7 @@ function main {
     docker compose up -d
   fi
 
-  cd "${repo}/tiedotuspalvelu/web"
+  cd "${repo}/web"
   init_nodejs
   npm_ci_if_needed
   npx webpack build
@@ -25,7 +25,7 @@ function main {
 
   start_backend
 
-  cd "${repo}/tiedotuspalvelu/web"
+  cd "${repo}/web"
   npx playwright install-deps
   npx playwright install chromium
   npx playwright test "$@"
@@ -33,7 +33,7 @@ function main {
 
 function start_backend {
   info "Building tiedotuspalvelu backend"
-  cd "${repo}/tiedotuspalvelu"
+  cd "${repo}"
   mvn --batch-mode package -DskipTests
 
   info "Starting tiedotuspalvelu backend"

@@ -3,7 +3,7 @@ set -o errexit -o nounset -o pipefail
 repo="$( cd "$(dirname "$0")" && pwd )"
 source "${repo}/scripts/lib/common-functions.sh"
 
-readonly qualifier="oppijanro"
+readonly qualifier="tiedotus"
 readonly capitalized_qualifier=$(echo ${qualifier} | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
 
 function main {

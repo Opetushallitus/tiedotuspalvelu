@@ -40,7 +40,7 @@ function select_java_version {
 }
 
 function wait_for_local_db_to_be_healthy {
-  wait_for_container_to_be_healthy oph-oppijanumerorekisteri-db
+  wait_for_container_to_be_healthy oph-tiedotuspalvelu-db
 }
 
 function wait_for_container_to_be_healthy {
@@ -82,6 +82,7 @@ function parse_env_from_script_name {
 }
 
 function aws {
+  info "Running AWS docker container"
   docker run \
     --platform linux/amd64 \
     --env AWS_PROFILE \
@@ -95,7 +96,7 @@ function aws {
 
 function export_aws_credentials {
   local -r env=$1
-  export AWS_PROFILE="oph-yleiskayttoiset-${env}"
+  export AWS_PROFILE="oph-tiedotus-${env}"
 
   info "Checking AWS credentials for env ${env}"
   if ! aws sts get-caller-identity >/dev/null; then

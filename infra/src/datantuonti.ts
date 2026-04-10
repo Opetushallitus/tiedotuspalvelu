@@ -30,7 +30,7 @@ export class ExportStack extends cdk.Stack {
   private createTargetAccountPrincipal() {
     const targetAccountId = ssm.StringParameter.valueFromLookup(
       this,
-      "oppijanumerorekisteri.tasks.datantuonti.export.role.target-account-id",
+      "tiedotuspalvelu.tasks.datantuonti.export.role.target-account-id",
     );
 
     return new iam.AccountPrincipal(targetAccountId);
@@ -43,7 +43,7 @@ export class ExportStack extends cdk.Stack {
       id: "DeleteDatantuontiObjectsAfterSevenDays",
       enabled: true,
       expiration: cdk.Duration.days(7),
-      prefix: "oppijanumerorekisteri/v1/csv/",
+      prefix: "tiedotuspalvelu/v1/csv/",
     });
     bucket.grantRead(targetAccountPrincipal);
 
@@ -54,12 +54,12 @@ export class ExportStack extends cdk.Stack {
 export function createS3ImporPolicyStatements(scope: constructs.Construct) {
   const importBucketName = ssm.StringParameter.valueFromLookup(
     scope,
-    "oppijanumerorekisteri.tasks.datantuonti.import.bucket-name",
+    "tiedotuspalvelu.tasks.datantuonti.import.bucket-name",
   );
 
   const decryptionKeyArn = ssm.StringParameter.valueFromLookup(
     scope,
-    "oppijanumerorekisteri.tasks.datantuonti.import.decryption-key-arn",
+    "tiedotuspalvelu.tasks.datantuonti.import.decryption-key-arn",
   );
 
   return [

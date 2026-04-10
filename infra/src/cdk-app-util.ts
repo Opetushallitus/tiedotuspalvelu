@@ -1,13 +1,13 @@
 import * as cdk from "aws-cdk-lib";
 import * as codebuild from "aws-cdk-lib/aws-codebuild";
 import * as codepipeline from "aws-cdk-lib/aws-codepipeline";
-import { PipelineType } from "aws-cdk-lib/aws-codepipeline";
+import {PipelineType} from "aws-cdk-lib/aws-codepipeline";
 import * as codepipeline_actions from "aws-cdk-lib/aws-codepipeline-actions";
 import * as constructs from "constructs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as sharedAccount from "./shared-account";
-import { ROUTE53_HEALTH_CHECK_REGION } from "./health-check";
+import {ROUTE53_HEALTH_CHECK_REGION} from "./health-check";
 import * as dm from "./dependency-management";
 
 class CdkAppUtil extends cdk.App {
@@ -21,7 +21,7 @@ class CdkAppUtil extends cdk.App {
     const dependencyManagement = new dm.DependencyManagementStack(
       this,
       sharedAccount.prefix("DependencyManagementStack"),
-      { env },
+      {env},
     );
     new ContinousDeploymentStack(
       this,
@@ -49,7 +49,7 @@ class ContinousDeploymentStack extends cdk.Stack {
       "hahtuva",
       {
         owner: "Opetushallitus",
-        name: "oppijanumerorekisteri",
+        name: "tiedotuspalvelu",
         branch: "master",
       },
       dependencyManagement,
@@ -61,7 +61,7 @@ class ContinousDeploymentStack extends cdk.Stack {
       "dev",
       {
         owner: "Opetushallitus",
-        name: "oppijanumerorekisteri",
+        name: "tiedotuspalvelu",
         branch: "green-hahtuva",
       },
       dependencyManagement,
@@ -73,7 +73,7 @@ class ContinousDeploymentStack extends cdk.Stack {
       "qa",
       {
         owner: "Opetushallitus",
-        name: "oppijanumerorekisteri",
+        name: "tiedotuspalvelu",
         branch: "green-dev",
       },
       dependencyManagement,
@@ -85,7 +85,7 @@ class ContinousDeploymentStack extends cdk.Stack {
       "prod",
       {
         owner: "Opetushallitus",
-        name: "oppijanumerorekisteri",
+        name: "tiedotuspalvelu",
         branch: "green-qa",
       },
       dependencyManagement,
@@ -125,7 +125,7 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
     cdk.Tags.of(pipeline).add(
       "Repository",
       `${repository.owner}/${repository.name}`,
-      { includeResourceTypes: ["AWS::CodePipeline::Pipeline"] },
+      {includeResourceTypes: ["AWS::CodePipeline::Pipeline"]},
     );
     cdk.Tags.of(pipeline).add("FromBranch", repository.branch, {
       includeResourceTypes: ["AWS::CodePipeline::Pipeline"],
@@ -151,26 +151,12 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
         output: sourceOutput,
         triggerOnPush: ["hahtuva", "dev", "qa"].includes(env),
       });
-    const sourceStage = pipeline.addStage({ stageName: "Source" });
+    const sourceStage = pipeline.addStage({stageName: "Source"});
     sourceStage.addAction(sourceAction);
 
     const runTests = env === "hahtuva";
     if (runTests) {
-      const testStage = pipeline.addStage({ stageName: "Test" });
-      testStage.addAction(
-        new codepipeline_actions.CodeBuildAction({
-          actionName: "TestOppijanumerorekisteri",
-          input: sourceOutput,
-          project: makeTestProject(
-            this,
-            env,
-            "TestOppijanumerorekisteri",
-            ["scripts/ci/run-oppijanumerorekisteri-tests.sh"],
-            "corretto21",
-            dependencyManagement,
-          ),
-        }),
-      );
+      const testStage = pipeline.addStage({stageName: "Test"});
       testStage.addAction(
         new codepipeline_actions.CodeBuildAction({
           actionName: "TestTiedotuspalvelu",
@@ -194,19 +180,6 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
             env,
             "TestTiedotuspalveluUi",
             ["scripts/ci/run-tiedotuspalvelu-ui-tests.sh"],
-            dependencyManagement,
-          ),
-        }),
-      );
-      testStage.addAction(
-        new codepipeline_actions.CodeBuildAction({
-          actionName: "TestHenkiloUi",
-          input: sourceOutput,
-          project: makeUbuntuTestProject(
-            this,
-            env,
-            "TestHenkiloUi",
-            ["scripts/ci/run-henkilo-ui-tests.sh"],
             dependencyManagement,
           ),
         }),
@@ -265,14 +238,13 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
             "git-credential-helper": "yes",
           },
           phases: {
-            pre_build: {
-              commands: [
-                "sudo yum install -y perl-Digest-SHA", // for shasum command
-                ...dependencyManagement.createMavenSettingsXmlCommands(),
-                "cp codebuild-mvn-settings.xml ./henkilo-ui/codebuild-mvn-settings.xml",
-                "cp codebuild-mvn-settings.xml ./tiedotuspalvelu/codebuild-mvn-settings.xml",
-              ],
-            },
+            // pre_build: {
+            //   commands: [
+            //     "sudo yum install -y perl-Digest-SHA", // for shasum command
+            //     ...dependencyManagement.createMavenSettingsXmlCommands(),
+            //     "cp codebuild-mvn-settings.xml ./henkilo-ui/codebuild-mvn-settings.xml",
+            //   ],
+            // },
             build: {
               commands: [
                 `./deploy-${env}.sh && ./scripts/ci/tag-green-build-${env}.sh && ./scripts/ci/publish-release-notes-${env}.sh`,
@@ -315,7 +287,7 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
       input: sourceOutput,
       project: deployProject,
     });
-    const deployStage = pipeline.addStage({ stageName: "Deploy" });
+    const deployStage = pipeline.addStage({stageName: "Deploy"});
     deployStage.addAction(deployAction);
   }
 }
@@ -325,7 +297,7 @@ function makeTestProject(
   env: string,
   name: string,
   testCommands: string[],
-  javaVersion: "corretto11" | "corretto21",
+  javaVersion: "corretto21",
   dependencyManagement: dm.DependencyManagementStack,
 ): codebuild.PipelineProject {
   const project = new codebuild.PipelineProject(

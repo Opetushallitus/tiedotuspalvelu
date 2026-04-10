@@ -15,18 +15,14 @@ function run_prettier_check {
   npm_ci_if_needed
   npx prettier . --check
 
-  cd "$repo/henkilo-ui/src/main/static"
-  npm_ci_if_needed
-  npx prettier 'src/**/*{ts,tsx}' --check
-
-  cd "$repo/tiedotuspalvelu/web"
+  cd "$repo/web"
   init_nodejs
   npm_ci_if_needed
   npx prettier . --check
 }
 
 function run_java_check {
-  cd "$repo/tiedotuspalvelu"
+  cd "$repo"
   select_java_version 21
   mvn fmt:check
 }

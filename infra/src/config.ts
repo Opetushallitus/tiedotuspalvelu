@@ -1,12 +1,15 @@
 const environments = ["hahtuva", "dev", "qa", "prod"] as const;
 type EnvironmentName = (typeof environments)[number];
 
+// TODO: remove unnecessary attributes, values, variables
+
 export type AutoScalingLimits = {
   min: number;
   max: number;
 };
 export type Config = {
-  oauthDomainName: string;
+  // TODO: does the missing oauthDomainName impact oauth? What oauth domain name does tiedotuspalvelu use?
+  // oauthDomainName: string;
   tiedotuspalveluDomain: string;
   opintopolkuHost: string;
   virkailijaHost: string;
@@ -15,9 +18,9 @@ export type Config = {
   tiedotuspalveluCapacity: AutoScalingLimits;
   features: {
     vtj: boolean;
-    "oppijanumerorekisteri.tasks.datantuonti.export.enabled": boolean;
-    "oppijanumerorekisteri.tasks.datantuonti.import.enabled": boolean;
-    "oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": boolean;
+    //"oppijanumerorekisteri.tasks.datantuonti.export.enabled": boolean;
+    //"oppijanumerorekisteri.tasks.datantuonti.import.enabled": boolean;
+    //"oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": boolean;
     "tiedotuspalvelu.fetch-oppija.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.base-url": string;
@@ -30,14 +33,14 @@ export type Config = {
 };
 
 const defaultConfig = {
-  apiCapacity: { min: 2, max: 8 },
-  batchCapacity: { min: 1, max: 1 },
-  tiedotuspalveluCapacity: { min: 1, max: 1 },
+  apiCapacity: {min: 2, max: 8},
+  batchCapacity: {min: 1, max: 1},
+  tiedotuspalveluCapacity: {min: 1, max: 1},
   features: {
     vtj: true,
-    "oppijanumerorekisteri.tasks.datantuonti.export.enabled": false,
-    "oppijanumerorekisteri.tasks.datantuonti.import.enabled": false,
-    "oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": false,
+    //"oppijanumerorekisteri.tasks.datantuonti.export.enabled": false,
+    //"oppijanumerorekisteri.tasks.datantuonti.import.enabled": false,
+    //"oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": false,
     "tiedotuspalvelu.fetch-oppija.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
@@ -62,21 +65,21 @@ function contains(arr: readonly string[], value: string): boolean {
 
 export function getConfig(): Config {
   const env = getEnvironment();
-  return { hahtuva, dev, qa, prod }[env];
+  return {hahtuva, dev, qa, prod}[env];
 }
 
 export const hahtuva: Config = {
   ...defaultConfig,
-  oauthDomainName: "hahtuva.oppijanumerorekisteri.opintopolku.fi",
+  // oauthDomainName: "hahtuva.oppijanumerorekisteri.opintopolku.fi",
   tiedotuspalveluDomain: "hahtuva.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "hahtuvaopintopolku.fi",
   virkailijaHost: "virkailija.hahtuvaopintopolku.fi",
-  apiCapacity: { min: 1, max: 2 },
+  apiCapacity: {min: 1, max: 2},
   features: {
     vtj: false,
-    "oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
-    "oppijanumerorekisteri.tasks.datantuonti.import.enabled": true,
-    "oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": true,
+    //"oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
+    //"oppijanumerorekisteri.tasks.datantuonti.import.enabled": true,
+    //"oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": true,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
@@ -86,16 +89,16 @@ export const hahtuva: Config = {
 
 export const dev: Config = {
   ...defaultConfig,
-  oauthDomainName: "dev.oppijanumerorekisteri.opintopolku.fi",
+  // oauthDomainName: "dev.oppijanumerorekisteri.opintopolku.fi",
   tiedotuspalveluDomain: "dev.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "untuvaopintopolku.fi",
   virkailijaHost: "virkailija.untuvaopintopolku.fi",
-  apiCapacity: { min: 1, max: 2 },
+  apiCapacity: {min: 1, max: 2},
   features: {
     vtj: false,
-    "oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
-    "oppijanumerorekisteri.tasks.datantuonti.import.enabled": true,
-    "oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": true,
+    //"oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
+    //"oppijanumerorekisteri.tasks.datantuonti.import.enabled": true,
+    //"oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": true,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
@@ -109,16 +112,13 @@ export const dev: Config = {
 
 export const qa: Config = {
   ...defaultConfig,
-  oauthDomainName: "qa.oppijanumerorekisteri.opintopolku.fi",
+  // oauthDomainName: "qa.oppijanumerorekisteri.opintopolku.fi",
   tiedotuspalveluDomain: "qa.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "testiopintopolku.fi",
   virkailijaHost: "virkailija.testiopintopolku.fi",
-  apiCapacity: { min: 1, max: 2 },
+  apiCapacity: {min: 1, max: 2},
   features: {
     vtj: false,
-    "oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
-    "oppijanumerorekisteri.tasks.datantuonti.import.enabled": true,
-    "oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": true,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.base-url":
@@ -133,15 +133,16 @@ export const qa: Config = {
 
 export const prod: Config = {
   ...defaultConfig,
-  oauthDomainName: "prod.oppijanumerorekisteri.opintopolku.fi",
+  // TODO: does the missing oauthDomainName impact oauth? What oauth domain name does tiedotuspalvelu use?
+  // oauthDomainName: "prod.oppijanumerorekisteri.opintopolku.fi",
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
-  apiCapacity: { min: 2, max: 8 },
-  tiedotuspalveluCapacity: { min: 0, max: 0 },
+  apiCapacity: {min: 2, max: 8},
+  tiedotuspalveluCapacity: {min: 0, max: 0},
   features: {
     ...defaultConfig.features,
-    "oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
+    //"oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
   },
   lampiExport: {
     enabled: true,

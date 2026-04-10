@@ -17,7 +17,7 @@ export function alarmIfExpectedLogLineIsMissing(
   const metricFilter = logGroup.addMetricFilter(`${id}SuccessMetricFilter`, {
     filterPattern,
     metricName: `${id}Success`,
-    metricNamespace: "Oppijanumerorekisteri",
+    metricNamespace: "Tiedotuspalvelu",
     metricValue: "1",
   });
   const alarm = new cloudwatch.Alarm(scope, `${id}FailingAlarm`, {
@@ -27,7 +27,7 @@ export function alarmIfExpectedLogLineIsMissing(
       period,
     }),
     comparisonOperator:
-      cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
+    cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
     threshold: 0,
     evaluationPeriods,
     treatMissingData: cloudwatch.TreatMissingData.BREACHING,

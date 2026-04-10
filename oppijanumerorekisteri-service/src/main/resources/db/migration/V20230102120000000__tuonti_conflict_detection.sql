@@ -1,4 +1,0 @@
---
--- KJHH-2119
---
-ALTER TABLE tuonti_rivi ADD COLUMN conflict BOOLEAN DEFAULT NULL;

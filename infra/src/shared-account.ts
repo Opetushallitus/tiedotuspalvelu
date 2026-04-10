@@ -1,10 +1,10 @@
-export const CDK_QUALIFIER = "oppijanro";
+export const CDK_QUALIFIER = "tiedotus";
+
+// export function prefix(name: string): string {
+//   return `Oppijanumerorekisteri${name}`;
+// }
 
 export function prefix(name: string): string {
-  return `Oppijanumerorekisteri${name}`;
-}
-
-export function tiedotuspalveluPrefix(name: string): string {
   return `Tiedotuspalvelu${name}`;
 }
 

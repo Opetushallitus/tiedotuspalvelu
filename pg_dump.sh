@@ -4,7 +4,7 @@ source "$( dirname "${BASH_SOURCE[0]}" )/scripts/lib/common-functions.sh"
 
 function main {
   export ENV="$1"; shift
-  local -r SERVICE="oppijanumerorekisteri"
+  local -r SERVICE="tiedotuspalvelu"
 
   init_cloud_base_virtualenv
 
@@ -30,7 +30,7 @@ function main {
   db_password="$( get_parameter "/${ENV}/postgresqls/${SERVICE}/app-user-password" )"
 
   start_tunnel "${TUNNEL_PORT}:${db_hostname}:5432"
-  PGPASSWORD=$db_password pg_dump --user "$db_username" --host localhost --port $TUNNEL_PORT --dbname oppijanumerorekisteri "$@"
+  PGPASSWORD=$db_password pg_dump --user "$db_username" --host localhost --port $TUNNEL_PORT --dbname tiedotuspalvelu "$@"
 }
 
 function start_tunnel {

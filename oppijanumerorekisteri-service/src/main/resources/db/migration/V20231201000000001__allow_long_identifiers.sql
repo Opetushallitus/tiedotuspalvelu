@@ -1,1 +1,0 @@
-ALTER TABLE identification ALTER COLUMN identifier TYPE text;

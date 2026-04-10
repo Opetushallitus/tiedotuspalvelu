@@ -7,7 +7,7 @@ trap cleanup EXIT INT QUIT TERM
 function main {
   select_java_version "21"
 
-  cd "${repo}/tiedotuspalvelu"
+  cd "${repo}"
 
   if is_running_on_ci; then
     docker compose up -d

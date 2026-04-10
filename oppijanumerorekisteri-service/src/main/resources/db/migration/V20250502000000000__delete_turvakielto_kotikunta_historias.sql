@@ -1,2 +1,0 @@
-DROP TABLE turvakielto_kotikunta;
-DROP TABLE turvakielto_kotikunta_historia;

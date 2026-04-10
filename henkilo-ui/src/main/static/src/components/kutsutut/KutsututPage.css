@@ -1,7 +1,0 @@
-.kutsu-confirmation-table {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    text-align: left;
-    padding: 10px;
-}

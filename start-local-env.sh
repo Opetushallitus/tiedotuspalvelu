@@ -10,7 +10,7 @@ trap stop EXIT
 
 function main {
   cd "$repo"
-  local -r session="oppijanumerorekisteri"
+  local -r session="tiedotuspalvelu"
   tmux kill-session -t "$session" || true
   tmux start-server
   tmux new-session -d -s "$session"
@@ -19,23 +19,12 @@ function main {
   tmux send-keys "docker compose down --volumes; docker compose up --force-recreate --renew-anon-volumes" C-m
 
   tmux select-pane -t 0
-  tmux splitw -h
-  tmux send-keys "$repo/scripts/run-oppijanumerorekisteri-service.sh" C-m
-
-  tmux select-pane -t 1
-  tmux splitw -v
-  tmux send-keys "$repo/scripts/run-henkilo-ui.sh" C-m
-
-  tmux select-pane -t 1
   tmux splitw -v
   tmux send-keys "$repo/scripts/run-tiedotuspalvelu-ui.sh" C-m
-  tmux select-pane -t 1
+
+  tmux select-pane -t 0
   tmux splitw -v
   tmux send-keys "$repo/scripts/run-omat-viestit-ui.sh" C-m
-
-  tmux select-pane -t 1
-  tmux splitw -v
-  tmux send-keys "$repo/scripts/run-mocks.sh" C-m
 
   tmux select-pane -t 0
   tmux splitw -v
