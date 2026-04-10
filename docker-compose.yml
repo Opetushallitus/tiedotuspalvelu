@@ -1,0 +1,53 @@
+services:
+  oph-tiedotuspalvelu-db:
+    container_name: oph-tiedotuspalvelu-db
+    image: postgres:16.13@sha256:80dee66a0ba95a54d143008143e5d7ef628c0e8d5e0666b39d13c8bac3377953
+    environment:
+      - POSTGRES_USER=tiedotuspalvelu
+      - POSTGRES_DB=tiedotuspalvelu
+      - POSTGRES_PASSWORD=tiedotuspalvelu
+    ports:
+      - 5436:5432
+    command: [ "postgres", "-c", "log_statement=all" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U tiedotuspalvelu -d tiedotuspalvelu" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ph-tiedotuspalvelu-test-db:
+    container_name: oph-tiedotuspalvelu-test-db
+    image: postgres:16.13@sha256:80dee66a0ba95a54d143008143e5d7ef628c0e8d5e0666b39d13c8bac3377953
+    environment:
+      - POSTGRES_USER=tiedotuspalvelu
+      - POSTGRES_DB=tiedotuspalvelu
+      - POSTGRES_PASSWORD=tiedotuspalvelu
+    ports:
+      - 5437:5432
+    command: [ "postgres", "-c", "log_statement=all" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U tiedotuspalvelu -d tiedotuspalvelu" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    container_name: oph-tiedotuspalvelu-keycloak
+    build: ./keycloak
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    ports:
+      - 8888:8080
+    volumes:
+      - ./keycloak/otuva-oauth2-realm.json:/opt/keycloak/data/import/otuva-oauth2-realm.json
+      - ./keycloak/cas-oppija-realm.json:/opt/keycloak/data/import/cas-oppija-realm.json
+      - ./keycloak/cas-virkailija-realm.json:/opt/keycloak/data/import/cas-virkailija-realm.json
+      - ./keycloak/themes/dev-quicklogin:/opt/keycloak/themes/dev-quicklogin
+    command: [ "start-dev", "--import-realm", "--health-enabled=true" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s

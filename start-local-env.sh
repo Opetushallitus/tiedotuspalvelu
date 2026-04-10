@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -o errexit -o nounset -o pipefail -o xtrace
+readonly repo="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+function stop() {
+  cd "$repo"
+  docker compose down
+}
+trap stop EXIT
+
+function main {
+  cd "$repo"
+  local -r session="tiedotuspalvelu"
+  tmux kill-session -t "$session" || true
+  tmux start-server
+  tmux new-session -d -s "$session"
+
+  tmux select-pane -t 0
+  tmux send-keys "docker compose down --volumes; docker compose up --force-recreate --renew-anon-volumes" C-m
+
+  tmux select-pane -t 0
+  tmux splitw -v
+  tmux send-keys "$repo/scripts/run-tiedotuspalvelu-ui.sh" C-m
+  tmux select-pane -t 0
+  tmux splitw -v
+  tmux send-keys "$repo/scripts/run-omat-viestit-ui.sh" C-m
+
+  tmux select-pane -t 0
+  tmux splitw -v
+  tmux send-keys "$repo/scripts/run-tiedotuspalvelu.sh" C-m
+
+  open "http://localhost:8086/omat-viestit/"
+  open "http://localhost:8087/tiedotuspalvelu/"
+
+  tmux attach-session -t "$session"
+}
+
+main "$@"

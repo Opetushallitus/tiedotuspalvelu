@@ -1,0 +1,9 @@
+{
+  "extends": ["config:best-practices", ":automergeMinor", ":automergeDigest"],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "prConcurrentLimit": 10
+}
