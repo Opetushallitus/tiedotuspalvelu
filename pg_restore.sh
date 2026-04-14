@@ -19,7 +19,7 @@ function main {
 
   export ECS_CLUSTER_NAME="tiedotuspalvelu"
   export SERVICE_NAME="TiedotuspalveluBastion"
-  export DB_SECRET="TiedotuspalveluDatabaseSecret"
+  export DB_SECRET="DatabaseSecret"
 
   start_tunnel
   sleep 3

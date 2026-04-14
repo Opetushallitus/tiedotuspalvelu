@@ -16,8 +16,7 @@ function main {
   fi
 
   export IMAGE_TAG="tiedotuspalvelu-psql-tunnel"
-  // TODO: should the following DB_SECRET identifier be changed?
-  export DB_SECRET="OppijanumerorekisteriTiedotuspalveluDatabaseSecret"
+  export DB_SECRET="DatabaseSecret"
 
   start_tunnel
   sleep 3

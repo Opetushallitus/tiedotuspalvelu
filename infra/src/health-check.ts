@@ -1,7 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as constructs from "constructs";
-import * as sharedAccount from "./shared-account";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as cloudwatch_actions from "aws-cdk-lib/aws-cloudwatch-actions";
@@ -23,7 +22,7 @@ export function createHealthCheckStacks(
 ) {
   const healthCheckStack = new GlobalHealthCheckStack(
     app,
-    sharedAccount.prefix("HealthCheckStack"),
+    "GlobalHealthCheckStack",
     {
       env: {
         account: process.env.CDK_DEPLOY_TARGET_ACCOUNT,
@@ -34,7 +33,9 @@ export function createHealthCheckStacks(
   );
   const regionalHealthCheckStack = new RegionalHealthCheckStack(
     app,
-    sharedAccount.prefix("HealthCheckStackEuWest1"),
+    // TODO: clean this up
+    // sharedAccount.prefix("HealthCheckStackEuWest1"),
+    `HealthCheckStackRegional${app.region}`,
     {
       env: {
         account: process.env.CDK_DEPLOY_TARGET_ACCOUNT,
@@ -59,7 +60,7 @@ class GlobalHealthCheckStack extends cdk.Stack {
     super(scope, id, props);
 
     this.globalAlarmTopic = new sns.Topic(this, "AlarmTopic", {
-      topicName: sharedAccount.prefix("AlarmGlobalTopic"),
+      topicName: "GlobalAlarmTopic",
     });
 
     for (const healthCheck of props.healthChecks) {
@@ -93,9 +94,7 @@ class GlobalHealthCheckStack extends cdk.Stack {
         this,
         `${healthCheck.name}HealthCheckAlarm`,
         {
-          alarmName: sharedAccount.prefix(
-            `${healthCheck.name}HealthCheckAlarm`,
-          ),
+          alarmName: `${healthCheck.name}HealthCheckAlarm`,
           threshold: 1,
           evaluationPeriods: 1,
           treatMissingData: cloudwatch.TreatMissingData.BREACHING,

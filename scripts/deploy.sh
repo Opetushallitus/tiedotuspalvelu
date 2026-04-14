@@ -108,7 +108,7 @@ function setup_cdk_deployment_target_policy {
 
 function export_aws_credentials {
   local -r env=$1
-  export AWS_PROFILE="oph-yleiskayttoiset-${env}"
+  export AWS_PROFILE="oph-tiedotus-${env}"
 
   if ! aws sts get-caller-identity >/dev/null; then
     fatal "AWS credentials are not configured env $env. Aborting."

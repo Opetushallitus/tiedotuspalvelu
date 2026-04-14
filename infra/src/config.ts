@@ -25,10 +25,10 @@ export type Config = {
     "tiedotuspalvelu.suomifi-viestit.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.base-url": string;
   };
-  lampiExport?: {
-    enabled: boolean;
-    bucketName: string;
-  };
+  // lampiExport?: {
+  //   enabled: boolean;
+  //   bucketName: string;
+  // };
 };
 
 const defaultConfig = {
@@ -100,10 +100,10 @@ export const dev: Config = {
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
   },
-  lampiExport: {
-    enabled: true,
-    bucketName: "oph-lampi-dev",
-  },
+  // lampiExport: {
+  //   enabled: true,
+  //   bucketName: "oph-lampi-dev",
+  // },
 };
 
 export const qa: Config = {
@@ -123,10 +123,10 @@ export const qa: Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url":
       "https://api.messages-qa.suomi.fi",
   },
-  lampiExport: {
-    enabled: true,
-    bucketName: "oph-lampi-qa",
-  },
+  // lampiExport: {
+  //   enabled: true,
+  //   bucketName: "oph-lampi-qa",
+  // },
 };
 
 export const prod: Config = {
@@ -142,8 +142,8 @@ export const prod: Config = {
     ...defaultConfig.features,
     //"oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
   },
-  lampiExport: {
-    enabled: true,
-    bucketName: "oph-lampi-prod",
-  },
+  // lampiExport: {
+  //   enabled: true,
+  //   bucketName: "oph-lampi-prod",
+  // },
 };
