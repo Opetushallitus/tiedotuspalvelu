@@ -135,6 +135,18 @@ class AlarmStack extends cdk.Stack {
     //   ),
     // );
 
+    const radiatorReader = new iam.Role(this, "RadiatorReaderRole", {
+      assumedBy: new iam.AccountPrincipal(constants.RADIATOR_ACCOUNT_ID),
+      roleName: "RadiatorReader",
+    });
+    radiatorReader.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["cloudwatch:DescribeAlarms"],
+        resources: ["*"],
+      }),
+    );
+
     this.exportValue(this.alarmTopic.topicArn);
   }
 
