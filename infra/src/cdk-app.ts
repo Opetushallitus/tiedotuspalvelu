@@ -40,12 +40,7 @@ class CdkApp extends cdk.App {
       stackProps,
     );
     const { vpc, bastion } = new VpcStack(this, "VpcStack", stackProps);
-    const ecsStack = new ECSStack(
-      this,
-      "ECSStack",
-      vpc,
-      stackProps,
-    );
+    const ecsStack = new ECSStack(this, "ECSStack", vpc, stackProps);
     // TODO: tiedotuspalvelu apparently doesn't use datantuonti for anything. Should it though? If not, remove these
     // const datantuontiExportStack = new datantuonti.ExportStack(
     //   this,
@@ -238,7 +233,12 @@ class VpcStack extends cdk.Stack {
 class ECSStack extends cdk.Stack {
   public cluster: ecs.Cluster;
 
-  constructor(scope: constructs.Construct, id: string, vpc: ec2.IVpc, props: cdk.StackProps) {
+  constructor(
+    scope: constructs.Construct,
+    id: string,
+    vpc: ec2.IVpc,
+    props: cdk.StackProps,
+  ) {
     super(scope, id, props);
 
     this.cluster = new ecs.Cluster(this, "Cluster", {
@@ -583,7 +583,6 @@ class TiedotuspalveluStack extends cdk.Stack {
     //     port: appPort.toString(),
     //   },
     // });
-
   }
 
   fetchOppijaAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {

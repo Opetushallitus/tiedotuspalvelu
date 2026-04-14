@@ -8,7 +8,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import { ROUTE53_HEALTH_CHECK_REGION } from "./health-check";
 import * as dm from "./dependency-management";
-import * as constants from "./constants"
+import * as constants from "./constants";
 
 class CdkAppUtil extends cdk.App {
   constructor(props: cdk.AppProps) {

@@ -13,13 +13,9 @@ export class DependencyManagementStack extends cdk.Stack {
   constructor(scope: constructs.Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
 
-    const domain = new codeartifact.CfnDomain(
-      this,
-      "Domain",
-      {
-        domainName: this.domainName,
-      },
-    );
+    const domain = new codeartifact.CfnDomain(this, "Domain", {
+      domainName: this.domainName,
+    });
 
     const mavenCentralUpstream = new codeartifact.CfnRepository(
       this,
@@ -32,15 +28,11 @@ export class DependencyManagementStack extends cdk.Stack {
     );
     mavenCentralUpstream.addDependency(domain);
 
-    const repo = new codeartifact.CfnRepository(
-      this,
-      "Repository",
-      {
-        domainName: this.domainName,
-        repositoryName: this.repositoryName,
-        upstreams: [this.upstreamRepositoryName],
-      },
-    );
+    const repo = new codeartifact.CfnRepository(this, "Repository", {
+      domainName: this.domainName,
+      repositoryName: this.repositoryName,
+      upstreams: [this.upstreamRepositoryName],
+    });
     repo.addDependency(mavenCentralUpstream);
   }
 
