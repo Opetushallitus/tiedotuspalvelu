@@ -35,7 +35,8 @@ export function createHealthCheckStacks(
     app,
     // TODO: clean this up
     // sharedAccount.prefix("HealthCheckStackEuWest1"),
-    `HealthCheckStackRegional${app.region}`,
+    // `HealthCheckStackRegional${app.region}`,
+    "HealthCheckStackRegional",
     {
       env: {
         account: process.env.CDK_DEPLOY_TARGET_ACCOUNT,
