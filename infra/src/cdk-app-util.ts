@@ -91,6 +91,16 @@ class ContinousDeploymentStack extends cdk.Stack {
       dependencyManagement,
       props,
     );
+
+    const radiatorReader = new iam.Role(this, "RadiatorReaderRole", {
+      assumedBy: new iam.AccountPrincipal(constants.RADIATOR_ACCOUNT_ID),
+      roleName: "RadiatorReader",
+    });
+    radiatorReader.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "AWSCodePipeline_ReadOnlyAccess",
+      ),
+    );
   }
 }
 
@@ -203,7 +213,6 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
       this,
       `Deploy${capitalizedEnv}Project`,
       {
-        // projectName: sharedAccount.prefix(`Deploy${capitalizedEnv}`),
         projectName: `Deploy${capitalizedEnv}`,
         concurrentBuildLimit: 1,
         environment: {
