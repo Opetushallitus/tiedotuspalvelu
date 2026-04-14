@@ -1,6 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as codebuild from "aws-cdk-lib/aws-codebuild";
 import * as codepipeline from "aws-cdk-lib/aws-codepipeline";
+import * as codestarconnections from "aws-cdk-lib/aws-codestarconnections";
 import { PipelineType } from "aws-cdk-lib/aws-codepipeline";
 import * as codepipeline_actions from "aws-cdk-lib/aws-codepipeline-actions";
 import * as constructs from "constructs";
@@ -144,16 +145,41 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
       includeResourceTypes: ["AWS::CodePipeline::Pipeline"],
     });
 
-    const connectionArn = ssm.StringParameter.fromStringParameterName(
-      this,
-      "CodeStarConnectionArn",
-      constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME,
-    ).stringValue;
+    let connectionArn: string | undefined = undefined;
+
+    try {
+      connectionArn = ssm.StringParameter.fromStringParameterName(
+        this,
+        "CodeStarConnectionArn",
+        constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME,
+      ).stringValue;
+    } catch (e) {
+      console.error(`Failed to get codestararn with parameter name ${constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME}`, e);
+    }
+
+    if (!connectionArn) {
+      const connection = new codestarconnections.CfnConnection(
+        this,
+        "GithubConnection",
+        {
+          connectionName: "GithubConnection",
+          providerType: "GitHub",
+        },
+      );
+
+      connectionArn = connection.attrConnectionArn;
+
+      new ssm.StringParameter(this, "CodeStarConnectionArn", {
+        parameterName: constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME,
+        stringValue: connection.attrConnectionArn,
+      });
+    }
+    
     const sourceOutput = new codepipeline.Artifact();
     const sourceAction =
       new codepipeline_actions.CodeStarConnectionsSourceAction({
         actionName: "Source",
-        connectionArn,
+        connectionArn: connectionArn,
         codeBuildCloneOutput: true,
         owner: repository.owner,
         repo: repository.name,
