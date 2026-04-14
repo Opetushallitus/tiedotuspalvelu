@@ -2,14 +2,11 @@ import * as cdk from "aws-cdk-lib";
 import * as codeartifact from "aws-cdk-lib/aws-codeartifact";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as constructs from "constructs";
-import * as sharedAccount from "./shared-account";
 
 export class DependencyManagementStack extends cdk.Stack {
-  readonly domainName = sharedAccount.prefix("-domain").toLowerCase();
-  readonly repositoryName = sharedAccount.prefix("-maven").toLowerCase();
-  readonly upstreamRepositoryName = sharedAccount
-    .prefix("-maven-central-upstream")
-    .toLowerCase();
+  readonly domainName = "oph-domain";
+  readonly repositoryName = "maven";
+  readonly upstreamRepositoryName = "maven-central-upstream";
   readonly githubUsernameSsmPath = "/mvn/settings/github/username";
   readonly githubPasswordSsmPath = "/mvn/settings/github/password";
 
@@ -18,7 +15,7 @@ export class DependencyManagementStack extends cdk.Stack {
 
     const domain = new codeartifact.CfnDomain(
       this,
-      sharedAccount.prefix("Domain"),
+      "Domain",
       {
         domainName: this.domainName,
       },
@@ -26,7 +23,7 @@ export class DependencyManagementStack extends cdk.Stack {
 
     const mavenCentralUpstream = new codeartifact.CfnRepository(
       this,
-      sharedAccount.prefix("MavenCentralUpstream"),
+      "MavenCentralUpstream",
       {
         domainName: this.domainName,
         repositoryName: this.upstreamRepositoryName,
@@ -37,7 +34,7 @@ export class DependencyManagementStack extends cdk.Stack {
 
     const repo = new codeartifact.CfnRepository(
       this,
-      sharedAccount.prefix("Repository"),
+      "Repository",
       {
         domainName: this.domainName,
         repositoryName: this.repositoryName,

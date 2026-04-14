@@ -5,7 +5,6 @@ import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as rds from "aws-cdk-lib/aws-rds";
-import * as s3 from "aws-cdk-lib/aws-s3";
 import * as elasticloadbalancingv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53_targets from "aws-cdk-lib/aws-route53-targets";
@@ -16,13 +15,11 @@ import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
-import * as sharedAccount from "./shared-account";
-import {prefix} from "./shared-account";
 import {getConfig, getEnvironment} from "./config";
 import * as path from "node:path";
 import {createHealthCheckStacks} from "./health-check";
-import * as datantuonti from "./datantuonti";
 import * as alarms from "./alarms";
+import * as constants from "./constants";
 
 const config = getConfig();
 
@@ -36,80 +33,52 @@ class CdkApp extends cdk.App {
       },
     };
 
-    const dnsStack = new DnsStack(this, prefix("DnsStack"), stackProps);
+    const dnsStack = new DnsStack(this, "DnsStack", stackProps);
     const {alarmsToSlackLambda, alarmTopic} = new AlarmStack(
       this,
-      sharedAccount.prefix("AlarmStack"),
+      "AlarmStack",
       stackProps,
     );
+    const {vpc, bastion} = new VpcStack(this, "VpcStack", stackProps);
     const ecsStack = new ECSStack(
       this,
-      sharedAccount.prefix("ECSStack"),
+      "ECSStack",
+      vpc,
       stackProps,
     );
     // TODO: tiedotuspalvelu apparently doesn't use datantuonti for anything. Should it though? If not, remove these
-    const datantuontiExportStack = new datantuonti.ExportStack(
+    // const datantuontiExportStack = new datantuonti.ExportStack(
+    //   this,
+    //   sharedAccount.prefix("DatantuontiExport"),
+    //   stackProps,
+    // );
+    const databaseStack = new TiedotusDatabaseStack(
       this,
-      sharedAccount.prefix("DatantuontiExport"),
-      stackProps,
-    );
-    const databaseStack = new DatabaseStack(
-      this,
-      sharedAccount.prefix("Database"),
-      ecsStack.cluster,
-      datantuontiExportStack.bucket,
+      "Database",
+      // ecsStack.cluster,
+      // datantuontiExportStack.bucket,
+      vpc,
+      bastion,
       {...stackProps, alarmTopic},
     );
 
     createHealthCheckStacks(this, alarmsToSlackLambda, [
-      // {
-      //   name: "Oppijanumerorekisteri",
-      //   url: new URL(
-      //     `https://${config.virkailijaHost}/oppijanumerorekisteri-service/actuator/health`,
-      //   ),
-      // },
       {
-        name: sharedAccount.prefix(""),
+        name: "Tiedotuspalvelu",
         url: new URL(
           `https://${config.opintopolkuHost}/omat-viestit/actuator/health`,
         ),
       },
     ]);
 
-    // new OppijanumerorekisteriApplicationStack(
-    //   this,
-    //   sharedAccount.prefix("OppijanumerorekisteriApplication"),
-    //   {
-    //     alarmTopic,
-    //     database: databaseStack.database,
-    //     bastion: databaseStack.bastion,
-    //     exportBucket: databaseStack.exportBucket,
-    //     ecsCluster: ecsStack.cluster,
-    //     datantuontiExportBucket: datantuontiExportStack.bucket,
-    //     datantuontiExportEncryptionKey: datantuontiExportStack.encryptionKey,
-    //     oauthHostedZone: dnsStack.oppijanumerorekisteriHostedZone,
-    //     ...stackProps,
-    //   },
-    // );
-
-    new TiedotuspalveluStack(this, sharedAccount.prefix("TiedotuspalveluApplication"), {
+    new TiedotuspalveluStack(this, "TiedotuspalveluApplication", {
       ...stackProps,
-      // database: databaseStack.tiedotuspalveluDatabase,
       database: databaseStack.database,
       ecsCluster: ecsStack.cluster,
       hostedZone: dnsStack.tiedotuspalveluHostedZone,
       alarmTopic,
+      vpc,
     });
-
-    // new HenkiloUiApplicationStack(
-    //   this,
-    //   sharedAccount.prefix("HenkiloUiApplication"),
-    //   {
-    //     ...stackProps,
-    //     bastion: databaseStack.bastion,
-    //     ecsCluster: ecsStack.cluster,
-    //   },
-    // );
   }
 }
 
@@ -151,20 +120,20 @@ class AlarmStack extends cdk.Stack {
       new sns_subscriptions.LambdaSubscription(this.alarmsToSlackLambda),
     );
 
-    // TODO: should the PagerDuty url be tiedotuspalvelu-specific?
-    const pagerDutyIntegrationUrlSecret =
-      secretsmanager.Secret.fromSecretNameV2(
-        this,
-        "PagerDutyIntegrationUrlSecret",
-        "/oppijanumero/PagerDutyIntegrationUrl",
-      );
+    // TODO: add PagerDutyIntegrationUrl to secret manager, create integration to PagerDuty for Tiedotuspalvelu
+    // const pagerDutyIntegrationUrlSecret =
+    //   secretsmanager.Secret.fromSecretNameV2(
+    //     this,
+    //     "PagerDutyIntegrationUrlSecret",
+    //     "PagerDutyIntegrationUrl",
+    //   );
 
-    this.alarmTopic.addSubscription(
-      new sns_subscriptions.UrlSubscription(
-        pagerDutyIntegrationUrlSecret.secretValue.toString(),
-        {protocol: sns.SubscriptionProtocol.HTTPS},
-      ),
-    );
+    // this.alarmTopic.addSubscription(
+    //   new sns_subscriptions.UrlSubscription(
+    //     pagerDutyIntegrationUrlSecret.secretValue.toString(),
+    //     { protocol: sns.SubscriptionProtocol.HTTPS },
+    //   ),
+    // );
 
     this.exportValue(this.alarmTopic.topicArn);
   }
@@ -201,48 +170,109 @@ class AlarmStack extends cdk.Stack {
   }
 }
 
-class ECSStack extends cdk.Stack {
-  public cluster: ecs.Cluster;
+class VpcStack extends cdk.Stack {
+  readonly vpc: ec2.IVpc;
+  readonly bastion: ec2.BastionHostLinux;
 
   constructor(scope: constructs.Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
+    this.vpc = this.createVpc();
+    this.bastion = this.createBastion();
+  }
 
-    this.cluster = new ecs.Cluster(this, "Cluster", {
-      vpc: ec2.Vpc.fromLookup(this, "Vpc", {vpcName: sharedAccount.VPC_NAME}),
-      clusterName: sharedAccount.prefix(""),
+  createVpc() {
+    const outIpAddresses = this.createOutIpAddresses();
+    const natProvider = ec2.NatProvider.gateway({
+      eipAllocationIds: outIpAddresses.map((ip) =>
+        ip.getAtt("AllocationId").toString(),
+      ),
+    });
+    const vpc = new ec2.Vpc(this, "Vpc", {
+      vpcName: "vpc",
+      subnetConfiguration: [
+        {
+          name: "Ingress",
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+        {
+          name: "Application",
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        },
+        {
+          name: "Database",
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        },
+      ],
+      maxAzs: 3,
+      natGateways: 3,
+      natGatewayProvider: natProvider,
+    });
+    vpc.addGatewayEndpoint("S3Endpoint", {
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+    });
+    return vpc;
+  }
+
+  private createBastion(): ec2.BastionHostLinux {
+    return new ec2.BastionHostLinux(this, "Bastion", {
+      vpc: this.vpc,
+      instanceName: "Bastion",
+    });
+  }
+
+  private createOutIpAddresses() {
+    // Ainakin Oiva näitä IP-osoitteita rajaamaan pääsyä palvelun rajapintoihin
+    return ["OutIpAddress1", "OutIpAddress2", "OutIpAddress3"].map((ip) =>
+      this.createIpAddress(ip),
+    );
+  }
+
+  private createIpAddress(id: string) {
+    return new ec2.CfnEIP(this, id, {
+      tags: [{key: "Name", value: id}],
     });
   }
 }
 
-class DatabaseStack extends cdk.Stack {
-  readonly bastion: ec2.BastionHostLinux;
+class ECSStack extends cdk.Stack {
+  public cluster: ecs.Cluster;
+
+  constructor(scope: constructs.Construct, id: string, vpc: ec2.IVpc, props: cdk.StackProps) {
+    super(scope, id, props);
+
+    this.cluster = new ecs.Cluster(this, "Cluster", {
+      vpc,
+      clusterName: "Cluster",
+    });
+  }
+}
+
+class TiedotusDatabaseStack extends cdk.Stack {
   readonly database: rds.DatabaseCluster;
-  // readonly tiedotuspalveluDatabase: rds.DatabaseCluster;
-  readonly exportBucket: s3.Bucket;
+
+  // readonly exportBucket: s3.Bucket;
 
   constructor(
     scope: constructs.Construct,
     id: string,
-    ecsCluster: ecs.Cluster,
-    datantuontiExportBucket: s3.Bucket,
+    //ecsCluster: ecs.Cluster,
+    //datantuontiExportBucket: s3.Bucket,
+    vpc: ec2.IVpc,
+    bastion: ec2.BastionHostLinux,
     props: cdk.StackProps & {
       alarmTopic: sns.ITopic;
     },
   ) {
     super(scope, id, props);
 
-    const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
-      vpcName: sharedAccount.VPC_NAME,
-    });
+    // const datantuontiImportRole = new iam.Role(this, "DatantuontiImport", {
+    //   assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
+    // });
+    // datantuonti
+    //   .createS3ImporPolicyStatements(this)
+    //   .forEach((statement) => datantuontiImportRole.addToPolicy(statement));
 
-    const datantuontiImportRole = new iam.Role(this, "DatantuontiImport", {
-      assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
-    });
-    datantuonti
-      .createS3ImporPolicyStatements(this)
-      .forEach((statement) => datantuontiImportRole.addToPolicy(statement));
-
-    this.exportBucket = new s3.Bucket(this, "ExportBucket", {});
+    // this.exportBucket = new s3.Bucket(this, "ExportBucket", {});
 
     // this.database = new rds.DatabaseCluster(
     //   this,
@@ -270,7 +300,7 @@ class DatabaseStack extends cdk.Stack {
     //   },
     // );
 
-    const dbClusterProps = {
+    const dbClusterProps: rds.DatabaseClusterProps = {
       vpc,
       vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE_ISOLATED},
       defaultDatabaseName: "tiedotuspalvelu",
@@ -278,7 +308,7 @@ class DatabaseStack extends cdk.Stack {
         version: rds.AuroraPostgresEngineVersion.VER_16_4,
       }),
       credentials: rds.Credentials.fromGeneratedSecret("tiedotuspalvelu", {
-        secretName: sharedAccount.prefix("DatabaseSecret"),
+        secretName: "DatabaseSecret",
       }),
       storageType: rds.DBClusterStorageType.AURORA,
       writer: rds.ClusterInstance.provisioned("writer", {
@@ -295,6 +325,7 @@ class DatabaseStack extends cdk.Stack {
       // s3ExportRole: datantuontiImportRole,
     };
 
+    // TODO: do we want to encrypt data in the db also in hahtuva and dev?
     if (getEnvironment() == "hahtuva" || getEnvironment() == "dev") {
       this.database = new rds.DatabaseCluster(this, "Database", {
         ...dbClusterProps,
@@ -307,119 +338,7 @@ class DatabaseStack extends cdk.Stack {
       });
     }
 
-    // if (getEnvironment() == "hahtuva" || getEnvironment() == "dev") {
-    //   this.database = new rds.DatabaseCluster(this, "Database", {
-    //     vpc,
-    //     vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-    //     defaultDatabaseName: "oppijanumerorekisteri",
-    //     engine: rds.DatabaseClusterEngine.auroraPostgres({
-    //       version: rds.AuroraPostgresEngineVersion.VER_16_4,
-    //     }),
-    //     credentials: rds.Credentials.fromGeneratedSecret(
-    //       "oppijanumerorekisteri",
-    //       {
-    //         secretName: sharedAccount.prefix("DatabaseSecret"),
-    //       },
-    //     ),
-    //     storageType: rds.DBClusterStorageType.AURORA,
-    //     writer: rds.ClusterInstance.provisioned("writer", {
-    //       enablePerformanceInsights: true,
-    //       instanceType: ec2.InstanceType.of(
-    //         ec2.InstanceClass.R6G,
-    //         ec2.InstanceSize.XLARGE,
-    //       ),
-    //     }),
-    //     readers: [],
-    //     s3ExportBuckets: [this.exportBucket, datantuontiExportBucket],
-    //     s3ImportRole: datantuontiImportRole,
-    //   });
-    // } else {
-    //   this.database = new rds.DatabaseCluster(this, "Database", {
-    //     vpc,
-    //     vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-    //     defaultDatabaseName: "oppijanumerorekisteri",
-    //     engine: rds.DatabaseClusterEngine.auroraPostgres({
-    //       version: rds.AuroraPostgresEngineVersion.VER_12_19,
-    //     }),
-    //     credentials: rds.Credentials.fromGeneratedSecret(
-    //       "oppijanumerorekisteri",
-    //       {
-    //         secretName: sharedAccount.prefix("DatabaseSecret"),
-    //       },
-    //     ),
-    //     storageType: rds.DBClusterStorageType.AURORA,
-    //     writer: rds.ClusterInstance.provisioned("writer", {
-    //       enablePerformanceInsights: true,
-    //       instanceType: ec2.InstanceType.of(
-    //         ec2.InstanceClass.R6G,
-    //         ec2.InstanceSize.XLARGE,
-    //       ),
-    //     }),
-    //     storageEncrypted: true,
-    //     readers: [],
-    //     s3ExportBuckets: [this.exportBucket, datantuontiExportBucket],
-    //     s3ImportRole: datantuontiImportRole,
-    //   });
-    // }
-
-    // this.tiedotuspalveluDatabase = new rds.DatabaseCluster(
-    //   this,
-    //   "TiedotuspalveluDatabase",
-    //   {
-    //     vpc,
-    //     vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-    //     defaultDatabaseName: "tiedotuspalvelu",
-    //     engine: rds.DatabaseClusterEngine.auroraPostgres({
-    //       version: rds.AuroraPostgresEngineVersion.VER_16_4,
-    //     }),
-    //     credentials: rds.Credentials.fromGeneratedSecret("tiedotuspalvelu", {
-    //       secretName: sharedAccount.prefix("TiedotuspalveluDatabaseSecret"),
-    //     }),
-    //     storageType: rds.DBClusterStorageType.AURORA,
-    //     writer: rds.ClusterInstance.provisioned("writer", {
-    //       enablePerformanceInsights: true,
-    //       instanceType: ec2.InstanceType.of(
-    //         ec2.InstanceClass.T4G,
-    //         ec2.InstanceSize.MEDIUM,
-    //       ),
-    //     }),
-    //     storageEncrypted: true,
-    //     readers: [],
-    //   },
-    // );
-
-    // this.database = new rds.DatabaseCluster(
-    //   this,
-    //   "TiedotuspalveluDatabase",
-    //   {
-    //     vpc,
-    //     vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-    //     defaultDatabaseName: "tiedotuspalvelu",
-    //     engine: rds.DatabaseClusterEngine.auroraPostgres({
-    //       version: rds.AuroraPostgresEngineVersion.VER_16_4,
-    //     }),
-    //     credentials: rds.Credentials.fromGeneratedSecret("tiedotuspalvelu", {
-    //       secretName: sharedAccount.prefix("TiedotuspalveluDatabaseSecret"),
-    //     }),
-    //     storageType: rds.DBClusterStorageType.AURORA,
-    //     writer: rds.ClusterInstance.provisioned("writer", {
-    //       enablePerformanceInsights: true,
-    //       instanceType: ec2.InstanceType.of(
-    //         ec2.InstanceClass.T4G,
-    //         ec2.InstanceSize.MEDIUM,
-    //       ),
-    //     }),
-    //     storageEncrypted: true,
-    //     readers: [],
-    //   },
-    // );
-
-    this.bastion = new ec2.BastionHostLinux(this, "BastionHost", {
-      vpc,
-      instanceName: sharedAccount.prefix("Bastion"),
-    });
-    this.database.connections.allowDefaultPortFrom(this.bastion);
-    // this.tiedotuspalveluDatabase.connections.allowDefaultPortFrom(this.bastion);
+    this.database.connections.allowDefaultPortFrom(bastion);
 
     // TODO: should therer be something similar for tiedotuspalvelu db?
     // const backup = new DatabaseBackupToS3(this, "DatabaseBackupToS3", {
@@ -432,520 +351,16 @@ class DatabaseStack extends cdk.Stack {
   }
 }
 
-// type OppijanumerorekisteriApplicationStackProperties = cdk.StackProps & {
-//   database: rds.DatabaseCluster;
-//   ecsCluster: ecs.Cluster;
-//   bastion: ec2.BastionHostLinux;
-//   exportBucket: s3.Bucket;
-//   datantuontiExportBucket: s3.Bucket;
-//   datantuontiExportEncryptionKey: kms.IKey;
-//   alarmTopic: sns.ITopic;
-//   oauthHostedZone: route53.IHostedZone;
-// };
-
-// class OppijanumerorekisteriApplicationStack extends cdk.Stack {
-//   private readonly alarmTopic: sns.ITopic;
-
-//   constructor(
-//     scope: constructs.Construct,
-//     id: string,
-//     props: OppijanumerorekisteriApplicationStackProperties,
-//   ) {
-//     super(scope, id, props);
-//     this.alarmTopic = props.alarmTopic;
-//     const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
-//       vpcName: sharedAccount.VPC_NAME,
-//     });
-
-//     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
-//       logGroupName: sharedAccount.prefix("/oppijanumerorekisteri"),
-//       retention: logs.RetentionDays.INFINITE,
-//     });
-//     if (config.lampiExport) {
-//       this.exportFailureAlarm(logGroup, props.alarmTopic);
-//     }
-//     this.datantuontiExportFailureAlarm(logGroup, props.alarmTopic);
-//     if (
-//       config.features["oppijanumerorekisteri.tasks.datantuonti.import.enabled"]
-//     ) {
-//       this.datantuontiImportFailureAlarm(logGroup, props.alarmTopic);
-//     }
-//     if (config.features.vtj) {
-//       this.vtjKyselyCertificationAlarm(logGroup, props.alarmTopic);
-//       this.muutostietorajapintaAlarms(logGroup, props.alarmTopic);
-//     }
-
-// const dockerImage = new ecr_assets.DockerImageAsset(this, "AppImage", {
-//   directory: path.join(__dirname, "../../"),
-//   file: "Dockerfile",
-//   platform: ecr_assets.Platform.LINUX_ARM64,
-//   exclude: ["infra/cdk.out"],
-// });
-
-//     new OppijanumerorekisteriService(this, "BatchService", {
-//       ecsCluster: props.ecsCluster,
-//       dockerImage,
-//       autoScaling: config.batchCapacity,
-//       logGroup,
-//       streamPrefix: "batch",
-//       database: props.database,
-//       datantuontiExportBucket: props.datantuontiExportBucket,
-//       datantuontiExportEncryptionKey: props.datantuontiExportEncryptionKey,
-//       exportBucket: props.exportBucket,
-//       awsRegion: this.region,
-//     });
-
-//     const apiService = new OppijanumerorekisteriService(this, "ApiService", {
-//       ecsCluster: props.ecsCluster,
-//       dockerImage,
-//       autoScaling: config.apiCapacity,
-//       logGroup,
-//       streamPrefix: "api",
-//       database: props.database,
-//       datantuontiExportBucket: props.datantuontiExportBucket,
-//       datantuontiExportEncryptionKey: props.datantuontiExportEncryptionKey,
-//       exportBucket: props.exportBucket,
-//       awsRegion: this.region,
-//       extraEnvironment: {
-//         "db-scheduler.enabled": "false",
-//       },
-//     });
-
-//     const alb = new elasticloadbalancingv2.ApplicationLoadBalancer(
-//       this,
-//       "LoadBalancer",
-//       {
-//         vpc,
-//         internetFacing: true,
-//       },
-//     );
-
-//     const sharedHostedZone = route53.HostedZone.fromLookup(
-//       this,
-//       "YleiskayttoisetHostedZone",
-//       {
-//         domainName: ssm.StringParameter.valueFromLookup(this, "zoneName"),
-//       },
-//     );
-//     const albHostname = `oppijanumerorekisteri.${sharedHostedZone.zoneName}`;
-
-//     new route53.ARecord(this, "ALBARecord", {
-//       zone: sharedHostedZone,
-//       recordName: albHostname,
-//       target: route53.RecordTarget.fromAlias(
-//         new route53_targets.LoadBalancerTarget(alb),
-//       ),
-//     });
-
-//     new route53.ARecord(this, "OAuthARecord", {
-//       zone: props.oauthHostedZone,
-//       recordName: config.oauthDomainName,
-//       target: route53.RecordTarget.fromAlias(
-//         new route53_targets.LoadBalancerTarget(alb),
-//       ),
-//     });
-
-//     const albCertificate = new certificatemanager.Certificate(
-//       this,
-//       "AlbCertificate",
-//       {
-//         domainName: albHostname,
-//         subjectAlternativeNames: [config.oauthDomainName],
-//         validation: certificatemanager.CertificateValidation.fromDnsMultiZone({
-//           albHostanme: sharedHostedZone,
-//           [config.oauthDomainName]: props.oauthHostedZone,
-//         }),
-//       },
-//     );
-
-//     const listener = alb.addListener("Listener", {
-//       protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
-//       port: 443,
-//       open: true,
-//       certificates: [albCertificate],
-//     });
-
-//     const target = listener.addTargets("ServiceTarget", {
-//       port: apiService.appPort,
-//       targets: [apiService.service],
-//       healthCheck: {
-//         enabled: true,
-//         interval: cdk.Duration.seconds(10),
-//         path: apiService.healthCheckPath,
-//         port: apiService.appPort.toString(),
-//       },
-//     });
-//     new ResponseAlarms(this, "ResponseAlarms", {
-//       prefix: sharedAccount.prefix(""),
-//       alarmTopic: this.alarmTopic,
-//       alb,
-//       albThreshold: 10,
-//       target,
-//       targetThreshold: 6,
-//     });
-//   }
-
-//   exportFailureAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
-//     alarms.alarmIfExpectedLogLineIsMissing(
-//       this,
-//       sharedAccount.prefix("ExportTask"),
-//       logGroup,
-//       alarmTopic,
-//       logs.FilterPattern.literal(
-//         '"Oppijanumerorekisteri export task completed"',
-//       ),
-//     );
-//   }
-
-//   datantuontiExportFailureAlarm(
-//     logGroup: logs.LogGroup,
-//     alarmTopic: sns.ITopic,
-//   ) {
-//     alarms.alarmIfExpectedLogLineIsMissing(
-//       this,
-//       sharedAccount.prefix("DatantuontiExportTask"),
-//       logGroup,
-//       alarmTopic,
-//       logs.FilterPattern.literal(
-//         '"Oppijanumerorekisteri datantuonti export task completed"',
-//       ),
-//       cdk.Duration.hours(25),
-//       1,
-//     );
-//   }
-
-//   datantuontiImportFailureAlarm(
-//     logGroup: logs.LogGroup,
-//     alarmTopic: sns.ITopic,
-//   ) {
-//     alarms.alarmIfExpectedLogLineIsMissing(
-//       this,
-//       "DatantuontiImportTask",
-//       logGroup,
-//       alarmTopic,
-//       logs.FilterPattern.literal(
-//         '"Oppijanumerorekisteri datantuonti import task completed"',
-//       ),
-//       cdk.Duration.hours(25),
-//       1,
-//     );
-//   }
-
-//   vtjKyselyCertificationAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
-//     alarms.alarmIfExpectedLogLineIsMissing(
-//       this,
-//       "VtjkyselyCertificationCheckTask",
-//       logGroup,
-//       alarmTopic,
-//       logs.FilterPattern.literal(
-//         '"VTJKysely certification is valid at least 30 days."',
-//       ),
-//       cdk.Duration.hours(25),
-//       1,
-//     );
-//   }
-
-//   muutostietorajapintaAlarms(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
-//     alarms.alarmIfExpectedLogLineIsMissing(
-//       this,
-//       "VtjMuutostietoIntegration",
-//       logGroup,
-//       alarmTopic,
-//       logs.FilterPattern.literal(
-//         '"muutostieto processed successfully for henkilo"',
-//       ),
-//       cdk.Duration.hours(25),
-//       1,
-//     );
-//     alarms.alarmIfExpectedLogLineIsMissing(
-//       this,
-//       "VtjPerustietoIntegration",
-//       logGroup,
-//       alarmTopic,
-//       logs.FilterPattern.literal('"updated with perustieto"'),
-//       cdk.Duration.hours(25),
-//       1,
-//     );
-//   }
-// }
-
-// class OppijanumerorekisteriService extends constructs.Construct {
-//   readonly appPort = 8080;
-//   readonly service: ecs.FargateService;
-//   readonly healthCheckPath: string =
-//     "/oppijanumerorekisteri-service/actuator/health";
-
-//   constructor(
-//     scope: constructs.Construct,
-//     id: string,
-//     props: {
-//       ecsCluster: ecs.Cluster;
-//       dockerImage: ecr_assets.DockerImageAsset;
-//       autoScaling: AutoScalingLimits;
-//       logGroup: logs.LogGroup;
-//       streamPrefix: string;
-//       database: rds.DatabaseCluster;
-//       exportBucket: s3.Bucket;
-//       datantuontiExportBucket: s3.Bucket;
-//       datantuontiExportEncryptionKey: kms.IKey;
-//       awsRegion: string;
-//       extraEnvironment?: ecs.ContainerDefinitionProps["environment"];
-//     },
-//   ) {
-//     super(scope, id);
-//     const taskDefinition = new ecs.FargateTaskDefinition(
-//       this,
-//       "TaskDefinition",
-//       {
-//         cpu: 1024,
-//         memoryLimitMiB: 8192,
-//         runtimePlatform: {
-//           operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
-//           cpuArchitecture: ecs.CpuArchitecture.ARM64,
-//         },
-//       },
-//     );
-//     const lampiProperties: ecs.ContainerDefinitionProps["environment"] =
-//       config.lampiExport
-//         ? {
-//             "oppijanumerorekisteri.tasks.export.enabled":
-//               config.lampiExport.enabled.toString(),
-//             "oppijanumerorekisteri.tasks.export.bucket-name":
-//               props.exportBucket.bucketName,
-//             "oppijanumerorekisteri.tasks.export.copy-to-lampi": "true",
-//             "oppijanumerorekisteri.tasks.export.lampi-bucket-name":
-//               config.lampiExport.bucketName,
-//           }
-//         : {
-//             "oppijanumerorekisteri.tasks.export.enabled": "false",
-//           };
-
-//     const lampiSecrets: ecs.ContainerDefinitionProps["secrets"] =
-//       config.lampiExport
-//         ? {
-//             "oppijanumerorekisteri.tasks.export.lampi-external-id":
-//               this.ssmSecret("LampiExternalId"),
-//             "oppijanumerorekisteri.tasks.export.lampi-role-arn":
-//               this.ssmString("LampiRoleArn2"),
-//           }
-//         : {};
-
-//     taskDefinition.addContainer("AppContainer", {
-//       image: ecs.ContainerImage.fromDockerImageAsset(props.dockerImage),
-//       logging: new ecs.AwsLogDriver({
-//         logGroup: props.logGroup,
-//         streamPrefix: props.streamPrefix,
-//       }),
-//       environment: {
-//         ENV: getEnvironment(),
-//         postgresql_host: props.database.clusterEndpoint.hostname,
-//         postgresql_port: props.database.clusterEndpoint.port.toString(),
-//         postgresql_db: "oppijanumerorekisteri",
-//         aws_region: props.awsRegion,
-//         export_bucket_name: props.exportBucket.bucketName,
-//         "oppijanumerorekisteri.tasks.datantuonti.export.enabled": `${config.features["oppijanumerorekisteri.tasks.datantuonti.export.enabled"]}`,
-//         "oppijanumerorekisteri.tasks.datantuonti.export.bucket-name":
-//           props.datantuontiExportBucket.bucketName,
-//         "oppijanumerorekisteri.tasks.datantuonti.export.encryption-key-arn":
-//           props.datantuontiExportEncryptionKey.keyArn,
-//         "oppijanumerorekisteri.tasks.datantuonti.import.enabled": `${config.features["oppijanumerorekisteri.tasks.datantuonti.import.enabled"]}`,
-//         "oppijanumerorekisteri.tasks.testidatantuonti.import.enabled": `${config.features["oppijanumerorekisteri.tasks.testidatantuonti.import.enabled"]}`,
-//         ...lampiProperties,
-//         ...props.extraEnvironment,
-//       },
-//       secrets: {
-//         postgresql_username: ecs.Secret.fromSecretsManager(
-//           props.database.secret!,
-//           "username",
-//         ),
-//         postgresql_password: ecs.Secret.fromSecretsManager(
-//           props.database.secret!,
-//           "password",
-//         ),
-//         authentication_app_password_to_haku: this.ssmSecret(
-//           "AuthenticationAppPasswordToHaku",
-//         ),
-//         authentication_app_username_to_haku: this.ssmSecret(
-//           "AuthenticationAppUsernameToHaku",
-//         ),
-//         authentication_app_password_to_vtj: this.ssmSecret(
-//           "AuthenticationAppPasswordToVtj",
-//         ),
-//         authentication_app_username_to_vtj: this.ssmSecret(
-//           "AuthenticationAppUsernameToVtj",
-//         ),
-//         authentication_app_password_to_henkilotietomuutos: this.ssmSecret(
-//           "AuthenticationAppPasswordToHenkilotietomuutos",
-//         ),
-//         authentication_app_username_to_henkilotietomuutos: this.ssmSecret(
-//           "AuthenticationAppUsernameToHenkilotietomuutos",
-//         ),
-//         kayttooikeus_password: this.ssmSecret("KayttooikeusPassword"),
-//         kayttooikeus_username: this.ssmSecret("KayttooikeusUsername"),
-//         ...lampiSecrets,
-//         palveluvayla_access_key_id: this.ssmSecret("PalveluvaylaAccessKeyId"),
-//         palveluvayla_secret_access_key: this.ssmSecret(
-//           "PalveluvaylaSecretAccessKey",
-//         ),
-//         viestinta_username: this.ssmSecret("ViestintaUsername"),
-//         viestinta_password: this.ssmSecret("ViestintaPassword"),
-//         ataru_username: this.ssmSecret("AtaruUsername"),
-//         ataru_password: this.ssmSecret("AtaruPassword"),
-//         oauth2_clientid: this.ssmSecret("Oauth2Clientid"),
-//         oauth2_clientsecret: this.ssmSecret("Oauth2Clientsecret"),
-//         host_cas: this.ssmSecret("HostCas"),
-//         host_virkailija: this.ssmSecret("HostVirkailija"),
-//         slack_webhook_url: this.ssmSecret("SlackWebhookUrl"),
-//         palveluvayla_apigw_role_arn: this.ssmSecret("PalveluvaylaApigwRoleArn"),
-//         vtj_muutosrajapinta_username: this.ssmSecret(
-//           "VtjMuutosrajapintaUsername",
-//         ),
-//         vtj_muutosrajapinta_password: this.ssmSecret(
-//           "VtjMuutosrajapintaPassword",
-//         ),
-//         vtjkysely_truststore_base64: ecs.Secret.fromSecretsManager(
-//           secretsmanager.Secret.fromSecretNameV2(
-//             this,
-//             "VtjkyselyTruststoreBase64",
-//             "/oppijanumerorekisteri/VtjkyselyTruststoreBase64",
-//           ),
-//         ),
-//         vtjkysely_truststore_password: this.ssmSecret(
-//           "VtjkyselyTruststorePassword",
-//         ),
-//         vtjkysely_keystore_base64: ecs.Secret.fromSecretsManager(
-//           secretsmanager.Secret.fromSecretNameV2(
-//             this,
-//             "VtjkyselyKeystoreBase64",
-//             "/oppijanumerorekisteri/VtjkyselyKeystoreBase64",
-//           ),
-//         ),
-//         vtjkysely_keystore_password: this.ssmSecret(
-//           "VtjkyselyKeystorePassword",
-//         ),
-//         vtjkysely_username: this.ssmSecret("VtjkyselyUsername"),
-//         vtjkysely_password: this.ssmSecret("VtjkyselyPassword"),
-//         henkilo_modified_sns_topic_arn: this.ssmSecret(
-//           "HenkiloModifiedSnsTopicArn",
-//         ),
-//         opintopolku_cross_account_role: this.ssmString(
-//           "OpintopolkuCrossAccountRole",
-//         ),
-//         "oppijanumerorekisteri.tasks.datantuonti.import.bucket-name":
-//           this.ssmString(
-//             "oppijanumerorekisteri.tasks.datantuonti.import.bucket-name",
-//             "",
-//           ),
-//       },
-//       portMappings: [
-//         {
-//           name: "oppijanumerorekisteri",
-//           containerPort: this.appPort,
-//           appProtocol: ecs.AppProtocol.http,
-//         },
-//       ],
-//     });
-
-//     props.exportBucket.grantReadWrite(taskDefinition.taskRole);
-//     props.datantuontiExportBucket.grantReadWrite(taskDefinition.taskRole);
-//     props.datantuontiExportEncryptionKey.grantEncryptDecrypt(
-//       taskDefinition.taskRole,
-//     );
-//     datantuonti
-//       .createS3ImporPolicyStatements(this)
-//       .forEach((statement) => taskDefinition.addToTaskRolePolicy(statement));
-//     if (config.lampiExport) {
-//       taskDefinition.addToTaskRolePolicy(
-//         new iam.PolicyStatement({
-//           actions: ["sts:AssumeRole"],
-//           resources: [
-//             ssm.StringParameter.valueFromLookup(
-//               this,
-//               "/oppijanumerorekisteri/LampiRoleArn2",
-//             ),
-//           ],
-//         }),
-//       );
-//     }
-//     taskDefinition.addToTaskRolePolicy(
-//       new iam.PolicyStatement({
-//         actions: ["sts:AssumeRole"],
-//         resources: [
-//           ssm.StringParameter.valueFromLookup(
-//             this,
-//             "/oppijanumerorekisteri/OpintopolkuCrossAccountRole",
-//           ),
-//         ],
-//       }),
-//     );
-//     taskDefinition.addToTaskRolePolicy(
-//       new iam.PolicyStatement({
-//         actions: ["sts:AssumeRole"],
-//         resources: [
-//           ssm.StringParameter.valueFromLookup(
-//             this,
-//             "/oppijanumerorekisteri/PalveluvaylaApigwRoleArn",
-//           ),
-//         ],
-//       }),
-//     );
-
-//     this.service = new ecs.FargateService(this, "Service", {
-//       cluster: props.ecsCluster,
-//       taskDefinition,
-//       desiredCount: props.autoScaling.min,
-//       minHealthyPercent: 100,
-//       maxHealthyPercent: 200,
-//       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-//       healthCheckGracePeriod: cdk.Duration.minutes(5),
-//     });
-//     const scaling = this.service.autoScaleTaskCount({
-//       minCapacity: props.autoScaling.min,
-//       maxCapacity: props.autoScaling.max,
-//     });
-
-//     scaling.scaleOnMetric("ServiceScaling", {
-//       metric: this.service.metricCpuUtilization(),
-//       scalingSteps: [
-//         { upper: 15, change: -1 },
-//         { lower: 50, change: +1 },
-//         { lower: 65, change: +2 },
-//         { lower: 80, change: +3 },
-//       ],
-//     });
-
-//     this.service.connections.allowToDefaultPort(props.database);
-//   }
-
-//   ssmString(
-//     name: string,
-//     prefix: string = "/oppijanumerorekisteri/",
-//   ): ecs.Secret {
-//     return ecs.Secret.fromSsmParameter(
-//       ssm.StringParameter.fromStringParameterName(
-//         this,
-//         `Param${name}`,
-//         `${prefix}${name}`,
-//       ),
-//     );
-//   }
-
-//   ssmSecret(name: string): ecs.Secret {
-//     return ecs.Secret.fromSsmParameter(
-//       ssm.StringParameter.fromSecureStringParameterAttributes(
-//         this,
-//         `Param${name}`,
-//         { parameterName: `/oppijanumerorekisteri/${name}` },
-//       ),
-//     );
-//   }
-// }
-
 type TiedotuspalveluStackProps = cdk.StackProps & {
   ecsCluster: ecs.Cluster;
   hostedZone: route53.IHostedZone;
   database: rds.DatabaseCluster;
   alarmTopic: sns.ITopic;
+  vpc: ec2.IVpc;
+  // TODO: should this stack also have the buckets for export?
+  // exportBucket: s3.Bucket;
+  // datantuontiExportBucket: s3.Bucket;
+  // datantuontiExportEncryptionKey: kms.IKey;
 };
 
 class TiedotuspalveluStack extends cdk.Stack {
@@ -958,12 +373,8 @@ class TiedotuspalveluStack extends cdk.Stack {
 
     const domainForNginxForwarding = `nginx.${config.tiedotuspalveluDomain}`;
 
-    const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
-      vpcName: sharedAccount.VPC_NAME,
-    });
-
     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
-      logGroupName: sharedAccount.prefix(""),
+      logGroupName: "Tiedotuspalvelu/tiedotuspalvelu",
       retention: logs.RetentionDays.INFINITE,
     });
 
@@ -980,7 +391,6 @@ class TiedotuspalveluStack extends cdk.Stack {
     }
 
     const dockerImage = new ecr_assets.DockerImageAsset(this, "AppImage", {
-      // directory: path.join(__dirname, "../../tiedotuspalvelu"),
       directory: path.join(__dirname, "../.."),
       file: "Dockerfile",
       platform: ecr_assets.Platform.LINUX_ARM64,
@@ -1001,8 +411,7 @@ class TiedotuspalveluStack extends cdk.Stack {
     );
     const koskiRoleArn = ssm.StringParameter.valueFromLookup(
       this,
-      // TODO: add this to AWS SSM util account?
-      "/koski-role-arn",
+      "koski-role-arn",
     );
 
     const appPort = 8080;
@@ -1030,32 +439,32 @@ class TiedotuspalveluStack extends cdk.Stack {
         "tiedotuspalvelu.suomifi-viestit.posti.contact-email":
           ssm.StringParameter.valueForStringParameter(
             this,
-            "/tiedotuspalvelu/suomifi-viestit/posti-contact-email",
+            "/suomifi-viestit/posti-contact-email",
           ),
         "tiedotuspalvelu.suomifi-viestit.sender-address.name":
           ssm.StringParameter.valueForStringParameter(
             this,
-            "/tiedotuspalvelu/suomifi-viestit/sender-address-name",
+            "/suomifi-viestit/sender-address-name",
           ),
         "tiedotuspalvelu.suomifi-viestit.sender-address.street-address":
           ssm.StringParameter.valueForStringParameter(
             this,
-            "/tiedotuspalvelu/suomifi-viestit/sender-address-street-address",
+            "/suomifi-viestit/sender-address-street-address",
           ),
         "tiedotuspalvelu.suomifi-viestit.sender-address.zip-code":
           ssm.StringParameter.valueForStringParameter(
             this,
-            "/tiedotuspalvelu/suomifi-viestit/sender-address-zip-code",
+            "/suomifi-viestit/sender-address-zip-code",
           ),
         "tiedotuspalvelu.suomifi-viestit.sender-address.city":
           ssm.StringParameter.valueForStringParameter(
             this,
-            "/tiedotuspalvelu/suomifi-viestit/sender-address-city",
+            "/suomifi-viestit/sender-address-city",
           ),
         "tiedotuspalvelu.suomifi-viestit.sender-address.country-code":
           ssm.StringParameter.valueForStringParameter(
             this,
-            "/tiedotuspalvelu/suomifi-viestit/sender-address-country-code",
+            "/suomifi-viestit/sender-address-country-code",
           ),
       },
       // TODO: should the parameter and secret names be changed, since we are using tiedotuspalvelu AWS account?
@@ -1064,7 +473,6 @@ class TiedotuspalveluStack extends cdk.Stack {
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
             "TiedotuspalveluOauth2ClientId",
-            // { parameterName: "/tiedotuspalvelu/oauth2/client-id" },
             {parameterName: "/oauth2/client-id"},
           ),
         ),
@@ -1073,7 +481,6 @@ class TiedotuspalveluStack extends cdk.Stack {
             ssm.StringParameter.fromSecureStringParameterAttributes(
               this,
               "TiedotuspalveluOauth2ClientSecret",
-              // { parameterName: "/tiedotuspalvelu/oauth2/client-secret" },
               {parameterName: "/oauth2/client-secret"},
             ),
           ),
@@ -1081,7 +488,6 @@ class TiedotuspalveluStack extends cdk.Stack {
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
             "TiedotuspalveluSuomifiViestitUsername",
-            // { parameterName: "/tiedotuspalvelu/suomifi-viestit/username" },
             {parameterName: "/suomifi-viestit/username"},
           ),
         ),
@@ -1089,7 +495,6 @@ class TiedotuspalveluStack extends cdk.Stack {
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
             "TiedotuspalveluSuomifiViestitPassword",
-            // { parameterName: "/tiedotuspalvelu/suomifi-viestit/password" },
             {parameterName: "/suomifi-viestit/password"},
           ),
         ),
@@ -1098,10 +503,6 @@ class TiedotuspalveluStack extends cdk.Stack {
             ssm.StringParameter.fromSecureStringParameterAttributes(
               this,
               "TiedotuspalveluSuomifiViestitSenderServiceId",
-              // {
-              //   parameterName:
-              //     "/tiedotuspalvelu/suomifi-viestit/sender-service-id",
-              // },
               {parameterName: "/suomifi-viestit/sender-service-id"},
             ),
           ),
@@ -1112,7 +513,7 @@ class TiedotuspalveluStack extends cdk.Stack {
               "TiedotuspalveluSuomifiViestitPostiUsername",
               {
                 parameterName:
-                  "/tiedotuspalvelu/suomifi-viestit/posti-username",
+                  "/suomifi-viestit/posti-username",
               },
             ),
           ),
@@ -1123,7 +524,7 @@ class TiedotuspalveluStack extends cdk.Stack {
               "TiedotuspalveluSuomifiViestitPostiPassword",
               {
                 parameterName:
-                  "/tiedotuspalvelu/suomifi-viestit/posti-password",
+                  "/suomifi-viestit/posti-password",
               },
             ),
           ),
@@ -1184,7 +585,7 @@ class TiedotuspalveluStack extends cdk.Stack {
       this,
       "LoadBalancer",
       {
-        vpc,
+        vpc: props.vpc,
         internetFacing: true,
       },
     );
@@ -1233,13 +634,13 @@ class TiedotuspalveluStack extends cdk.Stack {
         port: appPort.toString(),
       },
     });
+
   }
 
   fetchOppijaAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
     alarms.alarmIfExpectedLogLineIsMissing(
       this,
-      // sharedAccount.tiedotuspalveluPrefix("FetchOppijaTask"),
-      sharedAccount.prefix("FetchOppijaTask"),
+      "FetchOppijaTask",
       logGroup,
       alarmTopic,
       logs.FilterPattern.literal('"Finished running FetchOppijaTask"'),
@@ -1249,8 +650,7 @@ class TiedotuspalveluStack extends cdk.Stack {
   sendSuomiFiViestitAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
     alarms.alarmIfExpectedLogLineIsMissing(
       this,
-      // sharedAccount.tiedotuspalveluPrefix("SendSuomiFiViestitTask"),
-      sharedAccount.prefix("SendSuomiFiViestitTask"),
+      "SendSuomiFiViestitTask",
       logGroup,
       alarmTopic,
       logs.FilterPattern.literal('"Finished running SendSuomiFiViestitTask"'),
@@ -1263,8 +663,7 @@ class TiedotuspalveluStack extends cdk.Stack {
   ) {
     alarms.alarmIfExpectedLogLineIsMissing(
       this,
-      // sharedAccount.tiedotuspalveluPrefix("FetchSuomiFiViestitEventsTask"),
-      sharedAccount.prefix("FetchSuomiFiViestitEventsTask"),
+      "FetchSuomiFiViestitEventsTask",
       logGroup,
       alarmTopic,
       logs.FilterPattern.literal(
@@ -1276,8 +675,7 @@ class TiedotuspalveluStack extends cdk.Stack {
   fetchLocalisationsAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
     alarms.alarmIfExpectedLogLineIsMissing(
       this,
-      // sharedAccount.tiedotuspalveluPrefix("FetchLocalisationsTask"),
-      sharedAccount.prefix("FetchLocalisationsTask"),
+      "FetchLocalisationsTask",
       logGroup,
       alarmTopic,
       logs.FilterPattern.literal('"Finished running FetchLocalisationsTask"'),
@@ -1290,8 +688,7 @@ class TiedotuspalveluStack extends cdk.Stack {
   ) {
     alarms.alarmIfExpectedLogLineIsMissing(
       this,
-      // sharedAccount.tiedotuspalveluPrefix("CasClientSessionCleanerTask"),
-      sharedAccount.prefix("CasClientSessionCleanerTask"),
+      "CasClientSessionCleanerTask",
       logGroup,
       alarmTopic,
       logs.FilterPattern.literal(
@@ -1303,131 +700,9 @@ class TiedotuspalveluStack extends cdk.Stack {
   }
 }
 
-// type HenkiloUiApplicationStackProps = cdk.StackProps & {
-//   bastion: ec2.BastionHostLinux;
-//   ecsCluster: ecs.Cluster;
-// };
-
-// class HenkiloUiApplicationStack extends cdk.Stack {
-//   constructor(
-//     scope: constructs.Construct,
-//     id: string,
-//     props: HenkiloUiApplicationStackProps,
-//   ) {
-//     super(scope, id, props);
-
-//     const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
-//       vpcName: sharedAccount.VPC_NAME,
-//     });
-//     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
-//       logGroupName: sharedAccount.prefix("/henkilo-ui"),
-//       retention: logs.RetentionDays.INFINITE,
-//     });
-
-//     const dockerImage = new ecr_assets.DockerImageAsset(this, "AppImage", {
-//       directory: path.join(__dirname, "../../henkilo-ui"),
-//       file: "Dockerfile",
-//       platform: ecr_assets.Platform.LINUX_ARM64,
-//     });
-
-//     const taskDefinition = new ecs.FargateTaskDefinition(
-//       this,
-//       "TaskDefinition",
-//       {
-//         cpu: 2048,
-//         memoryLimitMiB: 5120,
-//         runtimePlatform: {
-//           operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
-//           cpuArchitecture: ecs.CpuArchitecture.ARM64,
-//         },
-//       },
-//     );
-
-//     const appPort = 8080;
-//     taskDefinition.addContainer("AppContainer", {
-//       image: ecs.ContainerImage.fromDockerImageAsset(dockerImage),
-//       logging: new ecs.AwsLogDriver({ logGroup, streamPrefix: "app" }),
-//       environment: {
-//         ENV: getEnvironment(),
-//       },
-//       portMappings: [
-//         {
-//           name: "service-provider",
-//           containerPort: appPort,
-//           appProtocol: ecs.AppProtocol.http,
-//         },
-//       ],
-//     });
-
-//     const service = new ecs.FargateService(this, "Service", {
-//       cluster: props.ecsCluster,
-//       taskDefinition,
-//       desiredCount: 1,
-//       minHealthyPercent: 100,
-//       maxHealthyPercent: 200,
-//       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-//       healthCheckGracePeriod: cdk.Duration.minutes(5),
-//     });
-
-//     const alb = new elasticloadbalancingv2.ApplicationLoadBalancer(
-//       this,
-//       "LoadBalancer",
-//       {
-//         vpc,
-//         internetFacing: true,
-//       },
-//     );
-
-//     const sharedHostedZone = route53.HostedZone.fromLookup(
-//       this,
-//       "YleiskayttoisetHostedZone",
-//       {
-//         domainName: ssm.StringParameter.valueFromLookup(this, "zoneName"),
-//       },
-//     );
-//     const albHostname = `henkilo-ui.${sharedHostedZone.zoneName}`;
-
-//     new route53.ARecord(this, "ALBARecord", {
-//       zone: sharedHostedZone,
-//       recordName: albHostname,
-//       target: route53.RecordTarget.fromAlias(
-//         new route53_targets.LoadBalancerTarget(alb),
-//       ),
-//     });
-
-//     const albCertificate = new certificatemanager.Certificate(
-//       this,
-//       "AlbCertificate",
-//       {
-//         domainName: albHostname,
-//         validation:
-//           certificatemanager.CertificateValidation.fromDns(sharedHostedZone),
-//       },
-//     );
-
-//     const listener = alb.addListener("Listener", {
-//       protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
-//       port: 443,
-//       open: true,
-//       certificates: [albCertificate],
-//     });
-
-//     listener.addTargets("ServiceTarget", {
-//       port: appPort,
-//       targets: [service],
-//       healthCheck: {
-//         enabled: true,
-//         interval: cdk.Duration.seconds(10),
-//         path: "/henkilo-ui/actuator/health",
-//         port: appPort.toString(),
-//       },
-//     });
-//   }
-// }
-
 const app = new CdkApp({
   defaultStackSynthesizer: new cdk.DefaultStackSynthesizer({
-    qualifier: sharedAccount.CDK_QUALIFIER,
+    qualifier: constants.CDK_QUALIFIER,
   }),
 });
 app.synth();

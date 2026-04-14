@@ -26,10 +26,10 @@ export type Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url": string;
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": boolean;
   };
-  lampiExport?: {
-    enabled: boolean;
-    bucketName: string;
-  };
+  // lampiExport?: {
+  //   enabled: boolean;
+  //   bucketName: string;
+  // };
 };
 
 const defaultConfig = {
@@ -104,10 +104,10 @@ export const dev: Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
   },
-  lampiExport: {
-    enabled: true,
-    bucketName: "oph-lampi-dev",
-  },
+  // lampiExport: {
+  //   enabled: true,
+  //   bucketName: "oph-lampi-dev",
+  // },
 };
 
 export const qa: Config = {
@@ -125,10 +125,10 @@ export const qa: Config = {
       "https://api.messages-qa.suomi.fi",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
   },
-  lampiExport: {
-    enabled: true,
-    bucketName: "oph-lampi-qa",
-  },
+  // lampiExport: {
+  //   enabled: true,
+  //   bucketName: "oph-lampi-qa",
+  // },
 };
 
 export const prod: Config = {
@@ -144,8 +144,8 @@ export const prod: Config = {
     ...defaultConfig.features,
     //"oppijanumerorekisteri.tasks.datantuonti.export.enabled": true,
   },
-  lampiExport: {
-    enabled: true,
-    bucketName: "oph-lampi-prod",
-  },
+  // lampiExport: {
+  //   enabled: true,
+  //   bucketName: "oph-lampi-prod",
+  // },
 };

@@ -6,9 +6,9 @@ import * as codepipeline_actions from "aws-cdk-lib/aws-codepipeline-actions";
 import * as constructs from "constructs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ssm from "aws-cdk-lib/aws-ssm";
-import * as sharedAccount from "./shared-account";
 import {ROUTE53_HEALTH_CHECK_REGION} from "./health-check";
 import * as dm from "./dependency-management";
+import * as constants from "./constants"
 
 class CdkAppUtil extends cdk.App {
   constructor(props: cdk.AppProps) {
@@ -20,12 +20,12 @@ class CdkAppUtil extends cdk.App {
     };
     const dependencyManagement = new dm.DependencyManagementStack(
       this,
-      sharedAccount.prefix("DependencyManagementStack"),
+      "DependencyManagementStack",
       {env},
     );
     new ContinousDeploymentStack(
       this,
-      sharedAccount.prefix("ContinuousDeploymentStack"),
+      "ContinuousDeploymentStack",
       dependencyManagement,
       {
         env,
@@ -45,7 +45,7 @@ class ContinousDeploymentStack extends cdk.Stack {
 
     new ContinousDeploymentPipelineStack(
       this,
-      sharedAccount.prefix(`HahtuvaContinuousDeploymentPipeline`),
+      "HahtuvaContinuousDeploymentPipeline",
       "hahtuva",
       {
         owner: "Opetushallitus",
@@ -57,7 +57,7 @@ class ContinousDeploymentStack extends cdk.Stack {
     );
     new ContinousDeploymentPipelineStack(
       this,
-      sharedAccount.prefix(`DevContinuousDeploymentPipeline`),
+      "DevContinuousDeploymentPipeline",
       "dev",
       {
         owner: "Opetushallitus",
@@ -69,7 +69,7 @@ class ContinousDeploymentStack extends cdk.Stack {
     );
     new ContinousDeploymentPipelineStack(
       this,
-      sharedAccount.prefix(`QaContinuousDeploymentPipeline`),
+      "QaContinuousDeploymentPipeline",
       "qa",
       {
         owner: "Opetushallitus",
@@ -81,7 +81,7 @@ class ContinousDeploymentStack extends cdk.Stack {
     );
     new ContinousDeploymentPipelineStack(
       this,
-      sharedAccount.prefix(`ProdContinuousDeploymentPipeline`),
+      "ProdContinuousDeploymentPipeline",
       "prod",
       {
         owner: "Opetushallitus",
@@ -118,7 +118,7 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
       this,
       `Deploy${capitalizedEnv}Pipeline`,
       {
-        pipelineName: sharedAccount.prefix(`Deploy${capitalizedEnv}`),
+        pipelineName: `Deploy${capitalizedEnv}`,
         pipelineType: PipelineType.V1,
       },
     );
@@ -137,7 +137,7 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
     const connectionArn = ssm.StringParameter.fromStringParameterName(
       this,
       "CodeStarConnectionArn",
-      sharedAccount.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME,
+      constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME,
     ).stringValue;
     const sourceOutput = new codepipeline.Artifact();
     const sourceAction =
@@ -203,7 +203,8 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
       this,
       `Deploy${capitalizedEnv}Project`,
       {
-        projectName: sharedAccount.prefix(`Deploy${capitalizedEnv}`),
+        // projectName: sharedAccount.prefix(`Deploy${capitalizedEnv}`),
+        projectName: `Deploy${capitalizedEnv}`,
         concurrentBuildLimit: 1,
         environment: {
           buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
@@ -272,10 +273,10 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
             effect: iam.Effect.ALLOW,
             actions: ["sts:AssumeRole"],
             resources: targetRegions.flatMap((targetRegion) => [
-              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${sharedAccount.CDK_QUALIFIER}-lookup-role-${deploymentTargetAccount}-${targetRegion}`,
-              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${sharedAccount.CDK_QUALIFIER}-file-publishing-role-${deploymentTargetAccount}-${targetRegion}`,
-              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${sharedAccount.CDK_QUALIFIER}-image-publishing-role-${deploymentTargetAccount}-${targetRegion}`,
-              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${sharedAccount.CDK_QUALIFIER}-deploy-role-${deploymentTargetAccount}-${targetRegion}`,
+              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${constants.CDK_QUALIFIER}-lookup-role-${deploymentTargetAccount}-${targetRegion}`,
+              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${constants.CDK_QUALIFIER}-file-publishing-role-${deploymentTargetAccount}-${targetRegion}`,
+              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${constants.CDK_QUALIFIER}-image-publishing-role-${deploymentTargetAccount}-${targetRegion}`,
+              `arn:aws:iam::${deploymentTargetAccount}:role/cdk-${constants.CDK_QUALIFIER}-deploy-role-${deploymentTargetAccount}-${targetRegion}`,
             ]),
           }),
         ],
@@ -304,7 +305,7 @@ function makeTestProject(
     scope,
     `${name}${capitalize(env)}Project`,
     {
-      projectName: sharedAccount.prefix(`${name}${capitalize(env)}`),
+      projectName: `${name}${capitalize(env)}`,
       concurrentBuildLimit: 1,
       environment: {
         buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
@@ -418,7 +419,7 @@ function capitalize(s: string) {
 
 const app = new CdkAppUtil({
   defaultStackSynthesizer: new cdk.DefaultStackSynthesizer({
-    qualifier: sharedAccount.CDK_QUALIFIER,
+    qualifier: constants.CDK_QUALIFIER,
   }),
 });
 app.synth();
