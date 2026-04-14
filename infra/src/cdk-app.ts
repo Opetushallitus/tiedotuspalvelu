@@ -11,7 +11,6 @@ import * as route53_targets from "aws-cdk-lib/aws-route53-targets";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as sns_subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as ssm from "aws-cdk-lib/aws-ssm";
-import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -40,12 +39,7 @@ class CdkApp extends cdk.App {
       stackProps,
     );
     const {vpc, bastion} = new VpcStack(this, "VpcStack", stackProps);
-    const ecsStack = new ECSStack(
-      this,
-      "ECSStack",
-      vpc,
-      stackProps,
-    );
+    const ecsStack = new ECSStack(this, "ECSStack", vpc, stackProps);
     // TODO: tiedotuspalvelu apparently doesn't use datantuonti for anything. Should it though? If not, remove these
     // const datantuontiExportStack = new datantuonti.ExportStack(
     //   this,
@@ -241,7 +235,12 @@ class VpcStack extends cdk.Stack {
 class ECSStack extends cdk.Stack {
   public cluster: ecs.Cluster;
 
-  constructor(scope: constructs.Construct, id: string, vpc: ec2.IVpc, props: cdk.StackProps) {
+  constructor(
+    scope: constructs.Construct,
+    id: string,
+    vpc: ec2.IVpc,
+    props: cdk.StackProps,
+  ) {
     super(scope, id, props);
 
     this.cluster = new ecs.Cluster(this, "Cluster", {
@@ -640,7 +639,6 @@ class TiedotuspalveluStack extends cdk.Stack {
     //     port: appPort.toString(),
     //   },
     // });
-
   }
 
   fetchOppijaAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
