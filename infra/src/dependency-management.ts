@@ -62,32 +62,17 @@ export class DependencyManagementStack extends cdk.Stack {
       actions: ["sts:GetServiceBearerToken"],
       resourceArns: ["*"],
     });
-    iam.Grant.addToPrincipal({
-      grantee,
-      actions: ["ssm:GetParameter"],
-      resourceArns: [
-        `arn:aws:ssm:${this.region}:${this.account}:parameter${this.githubUsernameSsmPath}`,
-        `arn:aws:ssm:${this.region}:${this.account}:parameter${this.githubPasswordSsmPath}`,
-      ],
-    });
   }
 
   createMavenSettingsXmlCommands(): string[] {
     return [
       `CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain ${this.domainName} --query authorizationToken --output text)`,
       `CODEARTIFACT_REPO_URL=$(aws codeartifact get-repository-endpoint --domain ${this.domainName} --repository ${this.repositoryName} --format maven --query repositoryEndpoint --output text)`,
-      `GITHUB_USERNAME=$(aws ssm get-parameter --name ${this.githubUsernameSsmPath} --query Parameter.Value --output text)`,
-      `GITHUB_PASSWORD=$(aws ssm get-parameter --name ${this.githubPasswordSsmPath} --with-decryption --query Parameter.Value --output text)`,
       `cat <<EOF > codebuild-mvn-settings.xml
 <settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
   xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd'>
   <servers>
-    <server>
-      <id>github</id>
-      <username>\${GITHUB_USERNAME}</username>
-      <password>\${GITHUB_PASSWORD}</password>
-    </server>
     <server>
       <id>codeartifact</id>
       <username>aws</username>
