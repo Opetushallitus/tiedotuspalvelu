@@ -154,7 +154,10 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
         constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME,
       ).stringValue;
     } catch (e) {
-      console.error(`Failed to get codestararn with parameter name ${constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME}`, e);
+      console.error(
+        `Failed to get codestararn with parameter name ${constants.CODE_STAR_CONNECTION_ARN_PARAMETER_NAME}`,
+        e,
+      );
     }
 
     if (!connectionArn) {
