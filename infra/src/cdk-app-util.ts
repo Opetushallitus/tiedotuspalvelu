@@ -248,13 +248,6 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
             "git-credential-helper": "yes",
           },
           phases: {
-            // pre_build: {
-            //   commands: [
-            //     "sudo yum install -y perl-Digest-SHA", // for shasum command
-            //     ...dependencyManagement.createMavenSettingsXmlCommands(),
-            //     "cp codebuild-mvn-settings.xml ./henkilo-ui/codebuild-mvn-settings.xml",
-            //   ],
-            // },
             build: {
               commands: [
                 `./deploy-${env}.sh && ./scripts/ci/tag-green-build-${env}.sh && ./scripts/ci/publish-release-notes-${env}.sh`,

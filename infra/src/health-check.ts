@@ -33,9 +33,6 @@ export function createHealthCheckStacks(
   );
   const regionalHealthCheckStack = new RegionalHealthCheckStack(
     app,
-    // TODO: clean this up
-    // sharedAccount.prefix("HealthCheckStackEuWest1"),
-    // `HealthCheckStackRegional${app.region}`,
     "HealthCheckStackRegional",
     {
       env: {
