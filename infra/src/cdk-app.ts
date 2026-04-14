@@ -605,35 +605,37 @@ class TiedotuspalveluStack extends cdk.Stack {
       ),
     });
 
-    const nginxCertificate = new certificatemanager.Certificate(
-      this,
-      "AlbNginxCertificate",
-      {
-        domainName: domainForNginxForwarding,
-        subjectAlternativeNames: [config.tiedotuspalveluDomain],
-        validation: certificatemanager.CertificateValidation.fromDns(
-          props.hostedZone,
-        ),
-      },
-    );
+    // Following resources have been commented out since without certificates they will not work
+    // TODO: apply for certificate and once certificate is available, restore these resources
+    // const nginxCertificate = new certificatemanager.Certificate(
+    //   this,
+    //   "AlbNginxCertificate",
+    //   {
+    //     domainName: domainForNginxForwarding,
+    //     subjectAlternativeNames: [config.tiedotuspalveluDomain],
+    //     validation: certificatemanager.CertificateValidation.fromDns(
+    //       props.hostedZone,
+    //     ),
+    //   },
+    // );
 
-    const listener = alb.addListener("Listener", {
-      protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
-      port: 443,
-      open: true,
-      certificates: [nginxCertificate],
-    });
+    // const listener = alb.addListener("Listener", {
+    //   protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+    //   port: 443,
+    //   open: true,
+    //   certificates: [nginxCertificate],
+    // });
 
-    listener.addTargets("ServiceTarget", {
-      port: appPort,
-      targets: [service],
-      healthCheck: {
-        enabled: true,
-        interval: cdk.Duration.seconds(30),
-        path: "/omat-viestit/actuator/health",
-        port: appPort.toString(),
-      },
-    });
+    // listener.addTargets("ServiceTarget", {
+    //   port: appPort,
+    //   targets: [service],
+    //   healthCheck: {
+    //     enabled: true,
+    //     interval: cdk.Duration.seconds(30),
+    //     path: "/omat-viestit/actuator/health",
+    //     port: appPort.toString(),
+    //   },
+    // });
 
   }
 
