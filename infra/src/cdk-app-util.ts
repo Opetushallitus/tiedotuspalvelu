@@ -50,7 +50,7 @@ class ContinousDeploymentStack extends cdk.Stack {
       {
         owner: "Opetushallitus",
         name: "tiedotuspalvelu",
-        branch: "master",
+        branch: "main",
       },
       dependencyManagement,
       props,
