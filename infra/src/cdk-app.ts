@@ -11,7 +11,6 @@ import * as route53_targets from "aws-cdk-lib/aws-route53-targets";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as sns_subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as ssm from "aws-cdk-lib/aws-ssm";
-import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -41,17 +40,10 @@ class CdkApp extends cdk.App {
     );
     const { vpc, bastion } = new VpcStack(this, "VpcStack", stackProps);
     const ecsStack = new ECSStack(this, "ECSStack", vpc, stackProps);
-    // TODO: tiedotuspalvelu apparently doesn't use datantuonti for anything. Should it though? If not, remove these
-    // const datantuontiExportStack = new datantuonti.ExportStack(
-    //   this,
-    //   sharedAccount.prefix("DatantuontiExport"),
-    //   stackProps,
-    // );
+
     const databaseStack = new TiedotusDatabaseStack(
       this,
       "Database",
-      // ecsStack.cluster,
-      // datantuontiExportStack.bucket,
       vpc,
       bastion,
       { ...stackProps, alarmTopic },
@@ -70,7 +62,7 @@ class CdkApp extends cdk.App {
       ...stackProps,
       database: databaseStack.database,
       ecsCluster: ecsStack.cluster,
-      hostedZone: dnsStack.tiedotuspalveluHostedZone,
+      hostedZone: dnsStack.hostedZone,
       alarmTopic,
       vpc,
     });
@@ -78,17 +70,13 @@ class CdkApp extends cdk.App {
 }
 
 class DnsStack extends cdk.Stack {
-  readonly tiedotuspalveluHostedZone: route53.IHostedZone;
+  readonly hostedZone: route53.IHostedZone;
   constructor(scope: constructs.Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
 
-    this.tiedotuspalveluHostedZone = new route53.HostedZone(
-      this,
-      "TiedotuspalveluHostedZone",
-      {
-        zoneName: config.tiedotuspalveluDomain,
-      },
-    );
+    this.hostedZone = new route53.HostedZone(this, "HostedZone", {
+      zoneName: config.oauthDomainName,
+    });
   }
 }
 
@@ -250,13 +238,10 @@ class ECSStack extends cdk.Stack {
 
 class TiedotusDatabaseStack extends cdk.Stack {
   readonly database: rds.DatabaseCluster;
-  // readonly exportBucket: s3.Bucket;
 
   constructor(
     scope: constructs.Construct,
     id: string,
-    //ecsCluster: ecs.Cluster,
-    //datantuontiExportBucket: s3.Bucket,
     vpc: ec2.IVpc,
     bastion: ec2.BastionHostLinux,
     props: cdk.StackProps & {
@@ -264,41 +249,6 @@ class TiedotusDatabaseStack extends cdk.Stack {
     },
   ) {
     super(scope, id, props);
-
-    // const datantuontiImportRole = new iam.Role(this, "DatantuontiImport", {
-    //   assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
-    // });
-    // datantuonti
-    //   .createS3ImporPolicyStatements(this)
-    //   .forEach((statement) => datantuontiImportRole.addToPolicy(statement));
-
-    // this.exportBucket = new s3.Bucket(this, "ExportBucket", {});
-
-    // this.database = new rds.DatabaseCluster(
-    //   this,
-    //   "TiedotuspalveluDatabase",
-    //   {
-    //     vpc,
-    //     vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-    //     defaultDatabaseName: "tiedotuspalvelu",
-    //     engine: rds.DatabaseClusterEngine.auroraPostgres({
-    //       version: rds.AuroraPostgresEngineVersion.VER_16_4,
-    //     }),
-    //     credentials: rds.Credentials.fromGeneratedSecret("tiedotuspalvelu", {
-    //       secretName: sharedAccount.prefix("TiedotuspalveluDatabaseSecret"),
-    //     }),
-    //     storageType: rds.DBClusterStorageType.AURORA,
-    //     writer: rds.ClusterInstance.provisioned("writer", {
-    //       enablePerformanceInsights: true,
-    //       instanceType: ec2.InstanceType.of(
-    //         ec2.InstanceClass.T4G,
-    //         ec2.InstanceSize.MEDIUM,
-    //       ),
-    //     }),
-    //     storageEncrypted: true,
-    //     readers: [],
-    //   },
-    // );
 
     const dbClusterProps: rds.DatabaseClusterProps = {
       vpc,
@@ -318,14 +268,10 @@ class TiedotusDatabaseStack extends cdk.Stack {
           ec2.InstanceSize.MEDIUM,
         ),
       }),
-      // storageEncrypted: true,
       readers: [],
-      // TODO: should db cluster have the s3 buckets?
-      // s3ExportBuckets: [this.exportBucket, datantuontiExportBucket],
-      // s3ExportRole: datantuontiImportRole,
     };
 
-    // TODO: do we want to encrypt data in the db also in hahtuva and dev?
+    // TODO: do we want to encrypt data in the db also in hahtuva and dev? Is there a better way to do this?
     if (getEnvironment() == "hahtuva" || getEnvironment() == "dev") {
       this.database = new rds.DatabaseCluster(this, "Database", {
         ...dbClusterProps,
@@ -339,15 +285,6 @@ class TiedotusDatabaseStack extends cdk.Stack {
     }
 
     this.database.connections.allowDefaultPortFrom(bastion);
-
-    // TODO: should therer be something similar for tiedotuspalvelu db?
-    // const backup = new DatabaseBackupToS3(this, "DatabaseBackupToS3", {
-    //   ecsCluster: ecsCluster,
-    //   dbCluster: this.database,
-    //   dbName: "oppijanumerorekisteri",
-    //   alarmTopic: props.alarmTopic,
-    // });
-    // this.database.connections.allowDefaultPortFrom(backup);
   }
 }
 
@@ -357,10 +294,6 @@ type TiedotuspalveluStackProps = cdk.StackProps & {
   database: rds.DatabaseCluster;
   alarmTopic: sns.ITopic;
   vpc: ec2.IVpc;
-  // TODO: should this stack also have the buckets for export?
-  // exportBucket: s3.Bucket;
-  // datantuontiExportBucket: s3.Bucket;
-  // datantuontiExportEncryptionKey: kms.IKey;
 };
 
 class TiedotuspalveluStack extends cdk.Stack {
@@ -371,7 +304,7 @@ class TiedotuspalveluStack extends cdk.Stack {
   ) {
     super(scope, id, props);
 
-    const domainForNginxForwarding = `nginx.${config.tiedotuspalveluDomain}`;
+    const domainForNginxForwarding = `nginx.${config.oauthDomainName}`;
 
     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
       logGroupName: "Tiedotuspalvelu/tiedotuspalvelu",
@@ -422,7 +355,7 @@ class TiedotuspalveluStack extends cdk.Stack {
         ENV: getEnvironment(),
         "server.port": appPort.toString(),
         "tiedotuspalvelu.oppija-origin": `https://${config.opintopolkuHost}`,
-        "tiedotuspalvelu.virkailija-origin": `https://${config.tiedotuspalveluDomain}`,
+        "tiedotuspalvelu.virkailija-origin": `https://${config.oauthDomainName}`,
         "tiedotuspalvelu.api-base-url": `https://${domainForNginxForwarding}`,
         "tiedotuspalvelu.opintopolku-host": config.opintopolkuHost,
         "tiedotuspalvelu.oppijanumerorekisteri.base-url": `https://${getEnvironment()}.oppijanumerorekisteri.opintopolku.fi/oppijanumerorekisteri-service`,
@@ -436,12 +369,11 @@ class TiedotuspalveluStack extends cdk.Stack {
         "spring.datasource.url": `jdbc:postgresql://${props.database.clusterEndpoint.hostname}:${props.database.clusterEndpoint.port}/tiedotuspalvelu`,
         "tiedotuspalvelu.koski-role-arn": koskiRoleArn,
       },
-      // TODO: should the parameter and secret names be changed, since we are using tiedotuspalvelu AWS account?
       secrets: {
         "tiedotuspalvelu.otuva.oauth2-client-id": ecs.Secret.fromSsmParameter(
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
-            "TiedotuspalveluOauth2ClientId",
+            "Oauth2ClientId",
             { parameterName: "/oauth2/client-id" },
           ),
         ),
@@ -449,21 +381,21 @@ class TiedotuspalveluStack extends cdk.Stack {
           ecs.Secret.fromSsmParameter(
             ssm.StringParameter.fromSecureStringParameterAttributes(
               this,
-              "TiedotuspalveluOauth2ClientSecret",
+              "Oauth2ClientSecret",
               { parameterName: "/oauth2/client-secret" },
             ),
           ),
         "tiedotuspalvelu.suomifi-viestit.username": ecs.Secret.fromSsmParameter(
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
-            "TiedotuspalveluSuomifiViestitUsername",
+            "SuomifiViestitUsername",
             { parameterName: "/suomifi-viestit/username" },
           ),
         ),
         "tiedotuspalvelu.suomifi-viestit.password": ecs.Secret.fromSsmParameter(
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
-            "TiedotuspalveluSuomifiViestitPassword",
+            "SuomifiViestitPassword",
             { parameterName: "/suomifi-viestit/password" },
           ),
         ),
@@ -471,7 +403,7 @@ class TiedotuspalveluStack extends cdk.Stack {
           ecs.Secret.fromSsmParameter(
             ssm.StringParameter.fromSecureStringParameterAttributes(
               this,
-              "TiedotuspalveluSuomifiViestitSenderServiceId",
+              "SuomifiViestitSenderServiceId",
               { parameterName: "/suomifi-viestit/sender-service-id" },
             ),
           ),
@@ -539,7 +471,7 @@ class TiedotuspalveluStack extends cdk.Stack {
 
     new route53.ARecord(this, "ARecord", {
       zone: props.hostedZone,
-      recordName: config.tiedotuspalveluDomain,
+      recordName: config.oauthDomainName,
       target: route53.RecordTarget.fromAlias(
         new route53_targets.LoadBalancerTarget(alb),
       ),
