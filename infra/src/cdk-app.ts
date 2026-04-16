@@ -75,7 +75,7 @@ class DnsStack extends cdk.Stack {
   constructor(scope: constructs.Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
 
-    this.hostedZone = new route53.HostedZone(this, "HostedZone", {
+    this.hostedZone = new route53.HostedZone(this, "TiedotuspalveluHostedZone", {
       zoneName: config.oauthDomainName,
     });
   }
