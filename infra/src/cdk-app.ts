@@ -75,9 +75,13 @@ class DnsStack extends cdk.Stack {
   constructor(scope: constructs.Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
 
-    this.hostedZone = new route53.HostedZone(this, "TiedotuspalveluHostedZone", {
-      zoneName: config.oauthDomainName,
-    });
+    this.hostedZone = new route53.HostedZone(
+      this,
+      "TiedotuspalveluHostedZone",
+      {
+        zoneName: config.oauthDomainName,
+      },
+    );
   }
 }
 
@@ -95,7 +99,6 @@ class AlarmStack extends cdk.Stack {
       new sns_subscriptions.LambdaSubscription(this.alarmsToSlackLambda),
     );
 
-    // TODO: add PagerDutyIntegrationUrl to secret manager, create integration to PagerDuty for Tiedotuspalvelu
     // const pagerDutyIntegrationUrlSecret =
     //   secretsmanager.Secret.fromSecretNameV2(
     //     this,
@@ -274,7 +277,6 @@ class TiedotusDatabaseStack extends cdk.Stack {
       readers: [],
     };
 
-    // TODO: do we want to encrypt data in the db also in hahtuva and dev? Is there a better way to do this?
     if (getEnvironment() == "hahtuva" || getEnvironment() == "dev") {
       this.database = new rds.DatabaseCluster(this, "Database", {
         ...dbClusterProps,
@@ -540,8 +542,6 @@ class TiedotuspalveluStack extends cdk.Stack {
       ),
     });
 
-    // Following resources have been commented out since without certificates they will not work
-    // TODO: apply for certificate and once certificate is available, restore these resources
     // const nginxCertificate = new certificatemanager.Certificate(
     //   this,
     //   "AlbNginxCertificate",
