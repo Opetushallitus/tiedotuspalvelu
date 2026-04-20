@@ -20,7 +20,7 @@ function start_ci {
   require_docker
   export_aws_credentials "util"
   echo "Starting ci for $1"
-  aws codepipeline start-pipeline-execution --name "TiedotuspalveluDeploy$(capitalize "${env}")"
+  aws codepipeline start-pipeline-execution --name "Deploy$(capitalize "${env}")"
 }
 
 function capitalize {
