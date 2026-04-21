@@ -314,6 +314,12 @@ class TiedotusDatabaseStack extends cdk.Stack {
     }
 
     this.oldDatabase.connections.allowDefaultPortFrom(bastion);
+
+    this.exportValue(this.oldDatabase.clusterEndpoint.hostname);
+    this.exportValue(this.oldDatabase.secret!.secretArn);
+    this.exportValue(
+      this.oldDatabase.connections.securityGroups[0].securityGroupId,
+    );
   }
 }
 
