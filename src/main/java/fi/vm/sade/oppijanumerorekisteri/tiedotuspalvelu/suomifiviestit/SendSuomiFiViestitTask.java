@@ -168,6 +168,6 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
                 senderAddress.city(),
                 senderAddress.countryCode(),
                 null)),
-        false);
+        true);
   }
 }
