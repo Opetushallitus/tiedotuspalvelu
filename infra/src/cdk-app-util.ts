@@ -277,6 +277,11 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
             "git-credential-helper": "yes",
           },
           phases: {
+            pre_build: {
+              commands: [
+                ...dependencyManagement.createMavenSettingsXmlCommands(),
+              ],
+            },
             build: {
               commands: [
                 `./deploy-${env}.sh && ./scripts/ci/tag-green-build-${env}.sh && ./scripts/ci/publish-release-notes-${env}.sh`,
