@@ -22,9 +22,9 @@ export type Config = {
 };
 
 const defaultConfig = {
-  apiCapacity: {min: 2, max: 8},
-  batchCapacity: {min: 1, max: 1},
-  tiedotuspalveluCapacity: {min: 1, max: 1},
+  apiCapacity: { min: 2, max: 8 },
+  batchCapacity: { min: 1, max: 1 },
+  tiedotuspalveluCapacity: { min: 1, max: 1 },
   features: {
     vtj: true,
     "tiedotuspalvelu.fetch-oppija.enabled": false,
@@ -51,7 +51,7 @@ function contains(arr: readonly string[], value: string): boolean {
 
 export function getConfig(): Config {
   const env = getEnvironment();
-  return {hahtuva, dev, qa, prod}[env];
+  return { hahtuva, dev, qa, prod }[env];
 }
 
 export const hahtuva: Config = {
@@ -59,7 +59,7 @@ export const hahtuva: Config = {
   oauthDomainName: "hahtuva.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "hahtuvaopintopolku.fi",
   virkailijaHost: "virkailija.hahtuvaopintopolku.fi",
-  apiCapacity: {min: 1, max: 2},
+  apiCapacity: { min: 1, max: 2 },
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -74,7 +74,7 @@ export const dev: Config = {
   oauthDomainName: "dev.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "untuvaopintopolku.fi",
   virkailijaHost: "virkailija.untuvaopintopolku.fi",
-  apiCapacity: {min: 1, max: 2},
+  apiCapacity: { min: 1, max: 2 },
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -89,7 +89,7 @@ export const qa: Config = {
   oauthDomainName: "qa.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "testiopintopolku.fi",
   virkailijaHost: "virkailija.testiopintopolku.fi",
-  apiCapacity: {min: 1, max: 2},
+  apiCapacity: { min: 1, max: 2 },
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -105,8 +105,8 @@ export const prod: Config = {
   oauthDomainName: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
-  apiCapacity: {min: 2, max: 8},
-  tiedotuspalveluCapacity: {min: 0, max: 0},
+  apiCapacity: { min: 2, max: 8 },
+  tiedotuspalveluCapacity: { min: 0, max: 0 },
   features: {
     ...defaultConfig.features,
   },

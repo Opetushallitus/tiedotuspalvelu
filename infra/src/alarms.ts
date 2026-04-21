@@ -27,7 +27,7 @@ export function alarmIfExpectedLogLineIsMissing(
       period,
     }),
     comparisonOperator:
-    cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
+      cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
     threshold: 0,
     evaluationPeriods,
     treatMissingData: cloudwatch.TreatMissingData.BREACHING,

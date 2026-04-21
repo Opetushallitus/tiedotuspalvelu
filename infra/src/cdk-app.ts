@@ -14,9 +14,9 @@ import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
-import {getConfig, getEnvironment} from "./config";
+import { getConfig, getEnvironment } from "./config";
 import * as path from "node:path";
-import {createHealthCheckStacks} from "./health-check";
+import { createHealthCheckStacks } from "./health-check";
 import * as alarms from "./alarms";
 import * as constants from "./constants";
 
@@ -33,12 +33,12 @@ class CdkApp extends cdk.App {
     };
 
     const dnsStack = new DnsStack(this, "DnsStack", stackProps);
-    const {alarmsToSlackLambda, alarmTopic} = new AlarmStack(
+    const { alarmsToSlackLambda, alarmTopic } = new AlarmStack(
       this,
       "AlarmStack",
       stackProps,
     );
-    const {vpc, bastion} = new VpcStack(this, "VpcStack", stackProps);
+    const { vpc, bastion } = new VpcStack(this, "VpcStack", stackProps);
     const ecsStack = new ECSStack(this, "ECSStack", vpc, stackProps);
 
     const databaseStack = new TiedotusDatabaseStack(
@@ -46,7 +46,7 @@ class CdkApp extends cdk.App {
       "Database",
       vpc,
       bastion,
-      {...stackProps, alarmTopic},
+      { ...stackProps, alarmTopic },
     );
 
     createHealthCheckStacks(this, alarmsToSlackLambda, [
@@ -219,7 +219,7 @@ class VpcStack extends cdk.Stack {
 
   private createIpAddress(id: string) {
     return new ec2.CfnEIP(this, id, {
-      tags: [{key: "Name", value: id}],
+      tags: [{ key: "Name", value: id }],
     });
   }
 }
@@ -258,7 +258,7 @@ class TiedotusDatabaseStack extends cdk.Stack {
 
     const dbClusterProps: rds.DatabaseClusterProps = {
       vpc,
-      vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE_ISOLATED},
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       defaultDatabaseName: "tiedotuspalvelu",
       engine: rds.DatabaseClusterEngine.auroraPostgres({
         version: rds.AuroraPostgresEngineVersion.VER_16_4,
@@ -355,7 +355,7 @@ class TiedotuspalveluStack extends cdk.Stack {
     const appPort = 8080;
     taskDefinition.addContainer("AppContainer", {
       image: ecs.ContainerImage.fromDockerImageAsset(dockerImage),
-      logging: new ecs.AwsLogDriver({logGroup, streamPrefix: "app"}),
+      logging: new ecs.AwsLogDriver({ logGroup, streamPrefix: "app" }),
       environment: {
         ENV: getEnvironment(),
         "server.port": appPort.toString(),
@@ -410,7 +410,7 @@ class TiedotuspalveluStack extends cdk.Stack {
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
             "Oauth2ClientId",
-            {parameterName: "/oauth2/client-id"},
+            { parameterName: "/oauth2/client-id" },
           ),
         ),
         "tiedotuspalvelu.otuva.oauth2-client-secret":
@@ -418,21 +418,21 @@ class TiedotuspalveluStack extends cdk.Stack {
             ssm.StringParameter.fromSecureStringParameterAttributes(
               this,
               "Oauth2ClientSecret",
-              {parameterName: "/oauth2/client-secret"},
+              { parameterName: "/oauth2/client-secret" },
             ),
           ),
         "tiedotuspalvelu.suomifi-viestit.username": ecs.Secret.fromSsmParameter(
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
             "SuomifiViestitUsername",
-            {parameterName: "/suomifi-viestit/username"},
+            { parameterName: "/suomifi-viestit/username" },
           ),
         ),
         "tiedotuspalvelu.suomifi-viestit.password": ecs.Secret.fromSsmParameter(
           ssm.StringParameter.fromSecureStringParameterAttributes(
             this,
             "SuomifiViestitPassword",
-            {parameterName: "/suomifi-viestit/password"},
+            { parameterName: "/suomifi-viestit/password" },
           ),
         ),
         "tiedotuspalvelu.suomifi-viestit.sender-service-id":
@@ -440,7 +440,7 @@ class TiedotuspalveluStack extends cdk.Stack {
             ssm.StringParameter.fromSecureStringParameterAttributes(
               this,
               "SuomifiViestitSenderServiceId",
-              {parameterName: "/suomifi-viestit/sender-service-id"},
+              { parameterName: "/suomifi-viestit/sender-service-id" },
             ),
           ),
         "tiedotuspalvelu.suomifi-viestit.posti.username":
@@ -449,8 +449,7 @@ class TiedotuspalveluStack extends cdk.Stack {
               this,
               "SuomifiViestitPostiUsername",
               {
-                parameterName:
-                  "/suomifi-viestit/posti-username",
+                parameterName: "/suomifi-viestit/posti-username",
               },
             ),
           ),
@@ -460,8 +459,7 @@ class TiedotuspalveluStack extends cdk.Stack {
               this,
               "SuomifiViestitPostiPassword",
               {
-                parameterName:
-                  "/suomifi-viestit/posti-password",
+                parameterName: "/suomifi-viestit/posti-password",
               },
             ),
           ),
@@ -496,9 +494,9 @@ class TiedotuspalveluStack extends cdk.Stack {
       desiredCount: config.tiedotuspalveluCapacity.min,
       minHealthyPercent: 100,
       maxHealthyPercent: 200,
-      vpcSubnets: {subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS},
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       healthCheckGracePeriod: cdk.Duration.minutes(5),
-      circuitBreaker: {enable: true},
+      circuitBreaker: { enable: true },
     });
 
     const scaling = service.autoScaleTaskCount({
@@ -509,10 +507,10 @@ class TiedotuspalveluStack extends cdk.Stack {
     scaling.scaleOnMetric("ServiceScaling", {
       metric: service.metricCpuUtilization(),
       scalingSteps: [
-        {upper: 15, change: -1},
-        {lower: 50, change: +1},
-        {lower: 65, change: +2},
-        {lower: 80, change: +3},
+        { upper: 15, change: -1 },
+        { lower: 50, change: +1 },
+        { lower: 65, change: +2 },
+        { lower: 80, change: +3 },
       ],
     });
 

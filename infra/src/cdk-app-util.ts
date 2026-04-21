@@ -1,13 +1,13 @@
 import * as cdk from "aws-cdk-lib";
 import * as codebuild from "aws-cdk-lib/aws-codebuild";
 import * as codepipeline from "aws-cdk-lib/aws-codepipeline";
-import {PipelineType} from "aws-cdk-lib/aws-codepipeline";
+import { PipelineType } from "aws-cdk-lib/aws-codepipeline";
 import * as codestarconnections from "aws-cdk-lib/aws-codestarconnections";
 import * as codepipeline_actions from "aws-cdk-lib/aws-codepipeline-actions";
 import * as constructs from "constructs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ssm from "aws-cdk-lib/aws-ssm";
-import {ROUTE53_HEALTH_CHECK_REGION} from "./health-check";
+import { ROUTE53_HEALTH_CHECK_REGION } from "./health-check";
 import * as dm from "./dependency-management";
 import * as constants from "./constants";
 
@@ -22,7 +22,7 @@ class CdkAppUtil extends cdk.App {
     const dependencyManagement = new dm.DependencyManagementStack(
       this,
       "DependencyManagementStack",
-      {env},
+      { env },
     );
     new ContinousDeploymentStack(
       this,
@@ -136,7 +136,7 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
     cdk.Tags.of(pipeline).add(
       "Repository",
       `${repository.owner}/${repository.name}`,
-      {includeResourceTypes: ["AWS::CodePipeline::Pipeline"]},
+      { includeResourceTypes: ["AWS::CodePipeline::Pipeline"] },
     );
     cdk.Tags.of(pipeline).add("FromBranch", repository.branch, {
       includeResourceTypes: ["AWS::CodePipeline::Pipeline"],
@@ -190,12 +190,12 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
         output: sourceOutput,
         triggerOnPush: ["hahtuva", "dev", "qa"].includes(env),
       });
-    const sourceStage = pipeline.addStage({stageName: "Source"});
+    const sourceStage = pipeline.addStage({ stageName: "Source" });
     sourceStage.addAction(sourceAction);
 
     const runTests = env === "hahtuva";
     if (runTests) {
-      const testStage = pipeline.addStage({stageName: "Test"});
+      const testStage = pipeline.addStage({ stageName: "Test" });
       testStage.addAction(
         new codepipeline_actions.CodeBuildAction({
           actionName: "TestTiedotuspalvelu",
@@ -319,7 +319,7 @@ class ContinousDeploymentPipelineStack extends cdk.Stack {
       input: sourceOutput,
       project: deployProject,
     });
-    const deployStage = pipeline.addStage({stageName: "Deploy"});
+    const deployStage = pipeline.addStage({ stageName: "Deploy" });
     deployStage.addAction(deployAction);
   }
 }
