@@ -256,7 +256,7 @@ class TiedotusDatabaseStack extends cdk.Stack {
   ) {
     super(scope, id, props);
 
-    const dbClusterProps: rds.DatabaseClusterProps = {
+    this.database = new rds.DatabaseCluster(this, "Database", {
       vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       defaultDatabaseName: "tiedotuspalvelu",
@@ -267,6 +267,7 @@ class TiedotusDatabaseStack extends cdk.Stack {
         secretName: "DatabaseSecret",
       }),
       storageType: rds.DBClusterStorageType.AURORA,
+      storageEncrypted: true,
       writer: rds.ClusterInstance.provisioned("writer", {
         enablePerformanceInsights: true,
         instanceType: ec2.InstanceType.of(
@@ -275,19 +276,7 @@ class TiedotusDatabaseStack extends cdk.Stack {
         ),
       }),
       readers: [],
-    };
-
-    if (getEnvironment() == "hahtuva" || getEnvironment() == "dev") {
-      this.database = new rds.DatabaseCluster(this, "Database", {
-        ...dbClusterProps,
-      });
-    } else {
-      // Prod cluster
-      this.database = new rds.DatabaseCluster(this, "Database", {
-        ...dbClusterProps,
-        storageEncrypted: true,
-      });
-    }
+    });
 
     this.database.connections.allowDefaultPortFrom(bastion);
   }
