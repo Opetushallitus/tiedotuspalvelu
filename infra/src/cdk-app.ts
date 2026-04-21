@@ -60,7 +60,7 @@ class CdkApp extends cdk.App {
 
     new TiedotuspalveluStack(this, "TiedotuspalveluApplication", {
       ...stackProps,
-      database: databaseStack.database,
+      database: databaseStack.oldDatabase,
       ecsCluster: ecsStack.cluster,
       hostedZone: dnsStack.hostedZone,
       alarmTopic,
@@ -243,6 +243,7 @@ class ECSStack extends cdk.Stack {
 }
 
 class TiedotusDatabaseStack extends cdk.Stack {
+  readonly oldDatabase: rds.DatabaseCluster;
   readonly database: rds.DatabaseCluster;
 
   constructor(
@@ -255,6 +256,29 @@ class TiedotusDatabaseStack extends cdk.Stack {
     },
   ) {
     super(scope, id, props);
+
+    this.database = new rds.DatabaseCluster(this, "DatabaseCluster", {
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
+      defaultDatabaseName: "tiedotuspalvelu",
+      engine: rds.DatabaseClusterEngine.auroraPostgres({
+        version: rds.AuroraPostgresEngineVersion.VER_16_4,
+      }),
+      credentials: rds.Credentials.fromGeneratedSecret("tiedotuspalvelu", {
+        secretName: "TiedotuspalveluDatabaseSecret",
+      }),
+      storageType: rds.DBClusterStorageType.AURORA,
+      storageEncrypted: true,
+      writer: rds.ClusterInstance.provisioned("writer", {
+        enablePerformanceInsights: true,
+        instanceType: ec2.InstanceType.of(
+          ec2.InstanceClass.T4G,
+          ec2.InstanceSize.MEDIUM,
+        ),
+      }),
+      readers: [],
+    });
+    this.database.connections.allowDefaultPortFrom(bastion);
 
     const dbClusterProps: rds.DatabaseClusterProps = {
       vpc,
@@ -278,18 +302,18 @@ class TiedotusDatabaseStack extends cdk.Stack {
     };
 
     if (getEnvironment() == "hahtuva" || getEnvironment() == "dev") {
-      this.database = new rds.DatabaseCluster(this, "Database", {
+      this.oldDatabase = new rds.DatabaseCluster(this, "Database", {
         ...dbClusterProps,
       });
     } else {
       // Prod cluster
-      this.database = new rds.DatabaseCluster(this, "Database", {
+      this.oldDatabase = new rds.DatabaseCluster(this, "Database", {
         ...dbClusterProps,
         storageEncrypted: true,
       });
     }
 
-    this.database.connections.allowDefaultPortFrom(bastion);
+    this.oldDatabase.connections.allowDefaultPortFrom(bastion);
   }
 }
 
