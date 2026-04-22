@@ -243,7 +243,6 @@ class ECSStack extends cdk.Stack {
 }
 
 class TiedotusDatabaseStack extends cdk.Stack {
-  readonly oldDatabase: rds.DatabaseCluster;
   readonly database: rds.DatabaseCluster;
 
   constructor(
@@ -279,48 +278,6 @@ class TiedotusDatabaseStack extends cdk.Stack {
       readers: [],
     });
     this.database.connections.allowDefaultPortFrom(bastion);
-
-    const dbClusterProps: rds.DatabaseClusterProps = {
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-      defaultDatabaseName: "tiedotuspalvelu",
-      engine: rds.DatabaseClusterEngine.auroraPostgres({
-        version: rds.AuroraPostgresEngineVersion.VER_16_4,
-      }),
-      credentials: rds.Credentials.fromGeneratedSecret("tiedotuspalvelu", {
-        secretName: "DatabaseSecret",
-      }),
-      storageType: rds.DBClusterStorageType.AURORA,
-      writer: rds.ClusterInstance.provisioned("writer", {
-        enablePerformanceInsights: true,
-        instanceType: ec2.InstanceType.of(
-          ec2.InstanceClass.T4G,
-          ec2.InstanceSize.MEDIUM,
-        ),
-      }),
-      readers: [],
-    };
-
-    if (getEnvironment() == "hahtuva" || getEnvironment() == "dev") {
-      this.oldDatabase = new rds.DatabaseCluster(this, "Database", {
-        ...dbClusterProps,
-      });
-    } else {
-      // Prod cluster
-      this.oldDatabase = new rds.DatabaseCluster(this, "Database", {
-        ...dbClusterProps,
-        storageEncrypted: true,
-      });
-    }
-
-    this.oldDatabase.connections.allowDefaultPortFrom(bastion);
-
-    this.exportValue(this.oldDatabase.clusterEndpoint.hostname);
-    this.exportValue(this.oldDatabase.clusterEndpoint.port);
-    this.exportValue(this.oldDatabase.secret!.secretArn);
-    this.exportValue(
-      this.oldDatabase.connections.securityGroups[0].securityGroupId,
-    );
   }
 }
 
