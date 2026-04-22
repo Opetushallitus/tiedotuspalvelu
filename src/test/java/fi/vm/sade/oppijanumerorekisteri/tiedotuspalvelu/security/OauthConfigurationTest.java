@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -65,16 +66,7 @@ public class OauthConfigurationTest extends TiedotuspalveluApiTest {
   public void postEndpointRejectsTokenWithoutRequiredRole() throws Exception {
     var token = fetchToken(OIKEUDETON);
     var uuid = UUID.randomUUID().toString();
-    var content =
-        """
-        {
-          "oppijanumero": "1.2.246.562.24.00000000001",
-          "todistusBucket": "bucket",
-          "todistusKey": "%s/todistus.pdf",
-          "idempotencyKey": "%s"
-        }
-        """
-            .formatted(uuid, uuid);
+    var content = createValidContent(uuid);
     mockMvc
         .perform(
             post("/omat-viestit/api/v1/tiedote/kielitutkintotodistus")
@@ -84,19 +76,23 @@ public class OauthConfigurationTest extends TiedotuspalveluApiTest {
         .andExpect(status().isForbidden());
   }
 
+  private @NonNull String createValidContent(String uuid) {
+    return """
+           {
+             "oppijanumero": "1.2.246.562.24.00000000001",
+             "opiskeluoikeusOid": "1.2.246.562.15.00000000001",
+             "todistusBucket": "bucket",
+             "todistusKey": "%s/todistus.pdf",
+             "idempotencyKey": "%s"
+           }
+           """
+        .formatted(uuid, uuid);
+  }
+
   @Test
   public void postEndpointIsAccessibleWithValidTokenAndRole() throws Exception {
     var uuid = UUID.randomUUID().toString();
-    var content =
-        """
-        {
-          "oppijanumero": "1.2.246.562.24.00000000001",
-          "todistusBucket": "bucket",
-          "todistusKey": "%s/todistus.pdf",
-          "idempotencyKey": "%s"
-        }
-        """
-            .formatted(uuid, uuid);
+    var content = createValidContent(uuid);
     mockMvc
         .perform(
             post("/omat-viestit/api/v1/tiedote/kielitutkintotodistus")

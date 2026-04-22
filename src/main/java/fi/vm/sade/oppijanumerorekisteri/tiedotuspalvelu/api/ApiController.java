@@ -52,7 +52,7 @@ public class ApiController {
             .idempotencyKey(tiedoteDto.idempotencyKey())
             .todistusBucketName(tiedoteDto.todistusBucketName())
             .todistusObjectKey(tiedoteDto.todistusObjectKey())
-            .opiskeluoikeusOid(tiedoteDto.opiskeluoikeusOid().orElse(null))
+            .opiskeluoikeusOid(tiedoteDto.opiskeluoikeusOid())
             .type(Tiedote.TYPE_KIELITUTKINTOTODISTUS)
             .state(Tiedote.STATE_OPPIJAN_VALIDOINTI)
             .build();

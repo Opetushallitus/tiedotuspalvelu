@@ -90,7 +90,7 @@ public class TiedotuspalveluApiTest {
             .idempotencyKey(UUID.randomUUID().toString())
             .todistusBucketName("koski-tiedotuspalvelu")
             .todistusObjectKey("2d08a8dc-378e-40aa-a3ce-5d987795e619/tiedote.pdf")
-            .opiskeluoikeusOid(Optional.of(OidGenerator.generateOpiskeluoikeusOid()));
+            .opiskeluoikeusOid(OidGenerator.generateOpiskeluoikeusOid());
     requestModifier.accept(builder);
 
     var content = objectMapper.writeValueAsString(builder.build());

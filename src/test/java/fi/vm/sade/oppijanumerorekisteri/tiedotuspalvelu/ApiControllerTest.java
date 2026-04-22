@@ -73,12 +73,13 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
         {
           "oppijanumero": "%s",
+          "opiskeluoikeusOid": "%s",
           "todistusBucket": "bucket",
           "todistusKey": "%s/todistus.pdf",
           "idempotencyKey": "%s"
         }
         """
-            .formatted(OPPIJANUMERO, idempotencyKey, idempotencyKey);
+            .formatted(OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey);
     performAuthorizedPostRequest(body).andExpect(status().isOk());
   }
 
