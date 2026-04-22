@@ -60,7 +60,7 @@ class CdkApp extends cdk.App {
 
     new TiedotuspalveluStack(this, "TiedotuspalveluApplication", {
       ...stackProps,
-      database: databaseStack.oldDatabase,
+      database: databaseStack.database,
       ecsCluster: ecsStack.cluster,
       hostedZone: dnsStack.hostedZone,
       alarmTopic,

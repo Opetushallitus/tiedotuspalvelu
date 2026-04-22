@@ -16,7 +16,7 @@ function main {
   fi
 
   export IMAGE_TAG="tiedotuspalvelu-psql-tunnel"
-  export DB_SECRET="DatabaseSecret"
+  export DB_SECRET="TiedotuspalveluDatabaseSecret"
 
   start_tunnel
   sleep 3
