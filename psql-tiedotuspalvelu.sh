@@ -17,6 +17,7 @@ function main {
 
   export IMAGE_TAG="tiedotuspalvelu-psql-tunnel"
   export DB_SECRET="TiedotuspalveluDatabaseSecret"
+  export SERVICE_NAME="Bastion"
 
   start_tunnel
   sleep 3
@@ -41,7 +42,7 @@ function start_tunnel {
   docker build --tag "${IMAGE_TAG}" .
   info "Starting tunnel from port $TUNNEL_PORT to RDS"
   container_id=$( docker run \
-    --env DB_SECRET \
+    --env SERVICE_NAME --env DB_SECRET \
     --env AWS_PROFILE --env AWS_REGION --env AWS_DEFAULT_REGION \
     --env AWS_CONTAINER_CREDENTIALS_RELATIVE_URI \
     --env AWS_ACCESS_KEY_ID --env AWS_SECRET_ACCESS_KEY --env AWS_SESSION_TOKEN \
