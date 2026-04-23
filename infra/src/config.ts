@@ -7,7 +7,7 @@ export type AutoScalingLimits = {
 };
 export type Config = {
   dnsDelegated: boolean;
-  oauthDomainName: string;
+  tiedotuspalveluDomain: string;
   opintopolkuHost: string;
   virkailijaHost: string;
   tiedotuspalveluCapacity: AutoScalingLimits;
@@ -55,7 +55,7 @@ export function getConfig(): Config {
 export const hahtuva: Config = {
   ...defaultConfig,
   dnsDelegated: false,
-  oauthDomainName: "hahtuva.tiedotuspalvelu.opintopolku.fi",
+  tiedotuspalveluDomain: "hahtuva.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "hahtuvaopintopolku.fi",
   virkailijaHost: "virkailija.hahtuvaopintopolku.fi",
   features: {
@@ -70,7 +70,7 @@ export const hahtuva: Config = {
 export const dev: Config = {
   ...defaultConfig,
   dnsDelegated: false,
-  oauthDomainName: "dev.tiedotuspalvelu.opintopolku.fi",
+  tiedotuspalveluDomain: "dev.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "untuvaopintopolku.fi",
   virkailijaHost: "virkailija.untuvaopintopolku.fi",
   features: {
@@ -85,7 +85,7 @@ export const dev: Config = {
 export const qa: Config = {
   ...defaultConfig,
   dnsDelegated: false,
-  oauthDomainName: "qa.tiedotuspalvelu.opintopolku.fi",
+  tiedotuspalveluDomain: "qa.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "testiopintopolku.fi",
   virkailijaHost: "virkailija.testiopintopolku.fi",
   features: {
@@ -101,7 +101,7 @@ export const qa: Config = {
 export const prod: Config = {
   ...defaultConfig,
   dnsDelegated: false,
-  oauthDomainName: "prod.tiedotuspalvelu.opintopolku.fi",
+  tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
   features: {

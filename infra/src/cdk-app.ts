@@ -80,7 +80,7 @@ class DnsStack extends cdk.Stack {
       this,
       "TiedotuspalveluHostedZone",
       {
-        zoneName: config.oauthDomainName,
+        zoneName: config.tiedotuspalveluDomain,
       },
     );
   }
@@ -298,7 +298,7 @@ class TiedotuspalveluStack extends cdk.Stack {
   ) {
     super(scope, id, props);
 
-    const domainForNginxForwarding = `nginx.${config.oauthDomainName}`;
+    const subdomainForVirkailijaNginxForwarding = `nginx.${config.tiedotuspalveluDomain}`;
 
     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
       logGroupName: "Tiedotuspalvelu/tiedotuspalvelu",
@@ -350,7 +350,7 @@ class TiedotuspalveluStack extends cdk.Stack {
         "server.port": appPort.toString(),
         "tiedotuspalvelu.oppija-origin": `https://${config.opintopolkuHost}`,
         "tiedotuspalvelu.virkailija-origin": `https://${config.virkailijaHost}`,
-        "tiedotuspalvelu.api-base-url": `https://${domainForNginxForwarding}`,
+        "tiedotuspalvelu.api-base-url": `https://${config.tiedotuspalveluDomain}`,
         "tiedotuspalvelu.opintopolku-host": config.opintopolkuHost,
         "tiedotuspalvelu.oppijanumerorekisteri.base-url": `https://${getEnvironment()}.oppijanumerorekisteri.opintopolku.fi/oppijanumerorekisteri-service`,
         "tiedotuspalvelu.fetch-oppija.enabled": `${config.features["tiedotuspalvelu.fetch-oppija.enabled"]}`,
@@ -516,25 +516,25 @@ class TiedotuspalveluStack extends cdk.Stack {
 
     new route53.ARecord(this, "ARecord", {
       zone: props.hostedZone,
-      recordName: config.oauthDomainName,
+      recordName: config.tiedotuspalveluDomain,
       target: route53.RecordTarget.fromAlias(
         new route53_targets.LoadBalancerTarget(alb),
       ),
     });
     new route53.ARecord(this, "NginxARecord", {
       zone: props.hostedZone,
-      recordName: domainForNginxForwarding,
+      recordName: subdomainForVirkailijaNginxForwarding,
       target: route53.RecordTarget.fromAlias(
         new route53_targets.LoadBalancerTarget(alb),
       ),
     });
     if (config.dnsDelegated) {
-      const nginxCertificate = new certificatemanager.Certificate(
+      const certificate = new certificatemanager.Certificate(
         this,
-        "AlbNginxCertificate",
+        "Certificate",
         {
-          domainName: domainForNginxForwarding,
-          subjectAlternativeNames: [config.oauthDomainName],
+          domainName: config.tiedotuspalveluDomain,
+          subjectAlternativeNames: [subdomainForVirkailijaNginxForwarding],
           validation: certificatemanager.CertificateValidation.fromDns(
             props.hostedZone,
           ),
@@ -544,7 +544,7 @@ class TiedotuspalveluStack extends cdk.Stack {
         protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
         port: 443,
         open: true,
-        certificates: [nginxCertificate],
+        certificates: [certificate],
       });
       listener.addTargets("ServiceTarget", {
         port: appPort,
