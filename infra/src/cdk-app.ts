@@ -9,6 +9,7 @@ import * as elasticloadbalancingv2 from "aws-cdk-lib/aws-elasticloadbalancingv2"
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53_targets from "aws-cdk-lib/aws-route53-targets";
 import * as sns from "aws-cdk-lib/aws-sns";
+import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as sns_subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
@@ -527,36 +528,35 @@ class TiedotuspalveluStack extends cdk.Stack {
         new route53_targets.LoadBalancerTarget(alb),
       ),
     });
-
-    // const nginxCertificate = new certificatemanager.Certificate(
-    //   this,
-    //   "AlbNginxCertificate",
-    //   {
-    //     domainName: domainForNginxForwarding,
-    //     subjectAlternativeNames: [config.tiedotuspalveluDomain],
-    //     validation: certificatemanager.CertificateValidation.fromDns(
-    //       props.hostedZone,
-    //     ),
-    //   },
-    // );
-
-    // const listener = alb.addListener("Listener", {
-    //   protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
-    //   port: 443,
-    //   open: true,
-    //   certificates: [nginxCertificate],
-    // });
-
-    // listener.addTargets("ServiceTarget", {
-    //   port: appPort,
-    //   targets: [service],
-    //   healthCheck: {
-    //     enabled: true,
-    //     interval: cdk.Duration.seconds(30),
-    //     path: "/omat-viestit/actuator/health",
-    //     port: appPort.toString(),
-    //   },
-    // });
+    if (config.dnsDelegated) {
+      const nginxCertificate = new certificatemanager.Certificate(
+        this,
+        "AlbNginxCertificate",
+        {
+          domainName: domainForNginxForwarding,
+          subjectAlternativeNames: [config.oauthDomainName],
+          validation: certificatemanager.CertificateValidation.fromDns(
+            props.hostedZone,
+          ),
+        },
+      );
+      const listener = alb.addListener("Listener", {
+        protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+        port: 443,
+        open: true,
+        certificates: [nginxCertificate],
+      });
+      listener.addTargets("ServiceTarget", {
+        port: appPort,
+        targets: [service],
+        healthCheck: {
+          enabled: true,
+          interval: cdk.Duration.seconds(30),
+          path: "/omat-viestit/actuator/health",
+          port: appPort.toString(),
+        },
+      });
+    }
   }
 
   fetchOppijaAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
