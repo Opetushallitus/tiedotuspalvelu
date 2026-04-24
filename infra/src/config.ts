@@ -71,6 +71,7 @@ export const hahtuva: Config = {
 export const dev: Config = {
   ...defaultConfig,
   dnsDelegated: true,
+  tiedotuspalveluCapacity: { min: 2, max: 4 },
   tiedotuspalveluDomain: "dev.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "untuvaopintopolku.fi",
   virkailijaHost: "virkailija.untuvaopintopolku.fi",
