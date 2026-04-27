@@ -86,7 +86,8 @@ export const dev: Config = {
 
 export const qa: Config = {
   ...defaultConfig,
-  dnsDelegated: false,
+  dnsDelegated: true,
+  tiedotuspalveluCapacity: { min: 2, max: 4 },
   tiedotuspalveluDomain: "qa.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "testiopintopolku.fi",
   virkailijaHost: "virkailija.testiopintopolku.fi",
