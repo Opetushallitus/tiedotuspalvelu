@@ -103,7 +103,7 @@ export const qa: Config = {
 
 export const prod: Config = {
   ...defaultConfig,
-  dnsDelegated: false,
+  dnsDelegated: true,
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
