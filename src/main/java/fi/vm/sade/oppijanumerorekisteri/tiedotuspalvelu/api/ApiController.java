@@ -46,13 +46,16 @@ public class ApiController {
       return buildTiedoteResponse(existingTiedote.get());
     }
 
+    var opiskeluoikeusOid =
+        tiedoteDto.opiskeluoikeusOid() != null ? tiedoteDto.opiskeluoikeusOid() : "[uupuu]";
+
     var tiedote =
         Tiedote.builder()
             .oppijanumero(tiedoteDto.oppijanumero())
             .idempotencyKey(tiedoteDto.idempotencyKey())
             .todistusBucketName(tiedoteDto.todistusBucketName())
             .todistusObjectKey(tiedoteDto.todistusObjectKey())
-            .opiskeluoikeusOid(tiedoteDto.opiskeluoikeusOid())
+            .opiskeluoikeusOid(opiskeluoikeusOid)
             .type(Tiedote.TYPE_KIELITUTKINTOTODISTUS)
             .state(Tiedote.STATE_OPPIJAN_VALIDOINTI)
             .build();

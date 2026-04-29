@@ -68,7 +68,7 @@ public class Tiedote {
   private String state;
 
   @Column(nullable = false)
-  private String opiskeluoikeusOid;
+  private String opiskeluoikeusOid = "[uupuuu]";
 
   @OneToOne(mappedBy = "tiedote", cascade = CascadeType.ALL, orphanRemoval = true)
   private KielitutkintotodistusPdf kielitutkintotodistusPdf;
