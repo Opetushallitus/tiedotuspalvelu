@@ -100,19 +100,19 @@ class AlarmStack extends cdk.Stack {
       new sns_subscriptions.LambdaSubscription(this.alarmsToSlackLambda),
     );
 
-    // const pagerDutyIntegrationUrlSecret =
-    //   secretsmanager.Secret.fromSecretNameV2(
-    //     this,
-    //     "PagerDutyIntegrationUrlSecret",
-    //     "PagerDutyIntegrationUrl",
-    //   );
+    const pagerDutyIntegrationUrlSecret =
+      secretsmanager.Secret.fromSecretNameV2(
+        this,
+        "PagerDutyIntegrationUrlSecret",
+        "PagerDutyIntegrationUrl",
+      );
 
-    // this.alarmTopic.addSubscription(
-    //   new sns_subscriptions.UrlSubscription(
-    //     pagerDutyIntegrationUrlSecret.secretValue.toString(),
-    //     { protocol: sns.SubscriptionProtocol.HTTPS },
-    //   ),
-    // );
+    this.alarmTopic.addSubscription(
+      new sns_subscriptions.UrlSubscription(
+        pagerDutyIntegrationUrlSecret.secretValue.toString(),
+        { protocol: sns.SubscriptionProtocol.HTTPS },
+      ),
+    );
 
     const radiatorReader = new iam.Role(this, "RadiatorReaderRole", {
       assumedBy: new iam.AccountPrincipal(constants.RADIATOR_ACCOUNT_ID),
