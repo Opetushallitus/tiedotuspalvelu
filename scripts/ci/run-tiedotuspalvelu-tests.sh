@@ -16,7 +16,7 @@ function main {
   wait_for_container_to_be_healthy oph-tiedotuspalvelu-test-db
   wait_for_container_to_be_healthy oph-tiedotuspalvelu-keycloak
 
-  mvn --batch-mode clean install
+  ./mvnw --batch-mode clean install
 }
 
 function cleanup {
