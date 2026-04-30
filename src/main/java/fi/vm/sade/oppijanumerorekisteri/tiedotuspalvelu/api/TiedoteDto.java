@@ -2,8 +2,10 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
+import org.springframework.lang.Nullable;
 
 @Builder
 public record TiedoteDto(
@@ -15,4 +17,5 @@ public record TiedoteDto(
         @JsonProperty("todistusKey")
         @NotBlank
         String todistusObjectKey,
-    @Schema(example = "1.2.246.562.15.44316860822") String opiskeluoikeusOid) {}
+    @Valid @Nullable KituExamineeDetailsDto kituExamineeDetails,
+    @Schema(example = "1.2.246.562.15.44316860822") @NotBlank String opiskeluoikeusOid) {}

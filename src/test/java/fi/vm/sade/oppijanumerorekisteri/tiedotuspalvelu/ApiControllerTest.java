@@ -6,14 +6,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.List;
 import java.util.UUID;
+
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituExamineeDetailsDto;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituKoodiarvoDto;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+@ExtendWith(OutputCaptureExtension.class)
 public class ApiControllerTest extends TiedotuspalveluApiTest {
 
   private static final String OPPIJANUMERO = OidGenerator.generateHenkiloOid();
@@ -36,7 +45,7 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
             post("/omat-viestit/api/v1/tiedote/kielitutkintotodistus")
                 .with(tokenFor(OIKEUDETON))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(tiedoteJson(UUID.randomUUID().toString())))
+                .content(tiedoteJson(UUID.randomUUID().toString(), "fi")))
         .andExpect(status().isForbidden());
   }
 
@@ -44,7 +53,7 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   public void createTiedoteSucceedsWithValidData() throws Exception {
     clearDatabase();
     String idempotencyKey = UUID.randomUUID().toString();
-    var returnedId = postTiedoteAndReturnId(tiedoteJson(idempotencyKey));
+    var returnedId = postTiedoteAndReturnId(tiedoteJson(idempotencyKey, "fi"));
 
     List<Tiedote> tiedotteet = tiedoteRepository.findAll();
     assertEquals(1, tiedotteet.size());
@@ -101,7 +110,7 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   public void createTiedoteWithSameIdempotencyKeyReturnsSameId() throws Exception {
     clearDatabase();
     String idempotencyKey = UUID.randomUUID().toString();
-    var json = tiedoteJson(idempotencyKey);
+    var json = tiedoteJson(idempotencyKey, "fi");
     var firstId = postTiedoteAndReturnId(json);
     var secondId = postTiedoteAndReturnId(json);
 
@@ -116,8 +125,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   public void createTiedoteWithDifferentIdempotencyKeysCreatesDifferentRecords() throws Exception {
     clearDatabase();
 
-    var firstId = postTiedoteAndReturnId(tiedoteJson(UUID.randomUUID().toString()));
-    var secondId = postTiedoteAndReturnId(tiedoteJson(UUID.randomUUID().toString()));
+    var firstId = postTiedoteAndReturnId(tiedoteJson(UUID.randomUUID().toString(), "fi"));
+    var secondId = postTiedoteAndReturnId(tiedoteJson(UUID.randomUUID().toString(), "fi"));
 
     assertEquals(false, firstId.equals(secondId));
 
@@ -141,6 +150,122 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         .andExpect(status().isUnauthorized());
   }
 
+  @Test
+  public void permitsRequestWithNoKituExamineeDetails() throws Exception {
+    var body = createSimpleBody();
+    performAuthorizedPostRequest(body).andExpect(status().isOk());
+  }
+
+  @Test
+  public void returnsBadRequestForEmptyKituExamineeDetails() throws Exception {
+    var kituExamineeDetails = "{}";
+    var body = createBodyWithKituExamineeDetails(kituExamineeDetails);
+    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void returnsBadRequestForBlankSukunimi() throws Exception {
+    var kituExamineeDetails = KituExamineeDetailsDto.builder()
+            .etunimet("nimi1 nimi2")
+            .email("email")
+            .katuosoite("katuosoite")
+            .postinumero("00100")
+            .postitoimipaikka("postitoimipaikka")
+            .maa(new KituKoodiarvoDto("FIN", "maatjavaltiot1"))
+            .todistuskieli(new KituKoodiarvoDto("fi", "kieli"));
+    var noSukunimiBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
+    performAuthorizedPostRequest(noSukunimiBody).andExpect(status().isBadRequest());
+
+    kituExamineeDetails.sukunimi("");
+    var emptySukunimiBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
+    performAuthorizedPostRequest(emptySukunimiBody).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void returnsBadRequestForBlankEtunimet() throws Exception {
+    var kituExamineeDetails = KituExamineeDetailsDto.builder()
+            .sukunimi("sukunimi")
+            .email("email")
+            .katuosoite("katuosoite")
+            .postinumero("00100")
+            .postitoimipaikka("postitoimipaikka")
+            .maa(new KituKoodiarvoDto("FIN", "maatjavaltiot1"))
+            .todistuskieli(new KituKoodiarvoDto("fi", "kieli"));
+    var noEtunimetBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
+    performAuthorizedPostRequest(noEtunimetBody).andExpect(status().isBadRequest());
+
+    kituExamineeDetails.etunimet("");
+    var emptyEtunimetBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
+    performAuthorizedPostRequest(emptyEtunimetBody).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void permitsKituExamineeDetailsWithOnlySukunimiAndEtunimet() throws Exception {
+    var kituExamineeDetails = KituExamineeDetailsDto.builder()
+            .sukunimi("sukunimi")
+            .etunimet("etunimet")
+            .build();
+    var body = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails));
+    performAuthorizedPostRequest(body).andExpect(status().isOk());
+  }
+
+  @Test
+  public void logsWarningAboutMissingKituExamineeDetails(CapturedOutput output) throws Exception {
+    var body = createSimpleBody();
+    performAuthorizedPostRequest(body).andExpect(status().isOk());
+    assertThat(output).containsPattern(".*WARN.*f.v.s.o.t.util.TodistuskieliUtil.*: No kituExamineeDetails in tiedoteDto");
+  }
+
+  @Test
+  public void logsWarningAboutMissingTodistusKieli(CapturedOutput output) throws Exception {
+    var kituExamineeDetails = KituExamineeDetailsDto.builder()
+            .sukunimi("Sukunimi")
+            .etunimet("Etunimet Etunimi")
+            .maa(new KituKoodiarvoDto("FIN", "maatjavaltiot1"))
+            .email("etunimi.sukunimi@email.fi")
+            .katuosoite("Katu 12 A 3")
+            .postinumero("00100")
+            .postitoimipaikka("Helsinki")
+            .build();
+    var noTodistuskieli = objectMapper.writeValueAsString(kituExamineeDetails);
+    var body = createBodyWithKituExamineeDetails(noTodistuskieli);
+    performAuthorizedPostRequest(body).andExpect(status().isOk());
+    assertThat(output).containsPattern(".*WARN.*f.v.s.o.t.util.TodistuskieliUtil.*: No todistuskieli found in tiedoteDto.kituExamineeDetails");
+  }
+
+  private String createSimpleBody() {
+    var idempotencyKey = UUID.randomUUID().toString();
+    var body =
+            """
+            {
+              "oppijanumero": "%s",
+              "opiskeluoikeusOid": "%s",
+              "todistusBucket": "bucket",
+              "todistusKey": "%s/todistus.pdf",
+              "idempotencyKey": "%s"
+            }
+            """
+                    .formatted(OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey);
+    return body;
+  }
+
+  private String createBodyWithKituExamineeDetails(String kituExamineeDetailsJson) {
+    var idempotencyKey = UUID.randomUUID().toString();
+    var body =
+            """
+            {
+              "oppijanumero": "%s",
+              "opiskeluoikeusOid": "%s",
+              "todistusBucket": "bucket",
+              "todistusKey": "%s/todistus.pdf",
+              "idempotencyKey": "%s",
+              "kituExamineeDetails": %s
+            }
+            """
+                    .formatted(OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey, kituExamineeDetailsJson);
+    return body;
+  }
+
   private @NonNull UUID postTiedoteAndReturnId(String json) throws Exception {
     var response =
         performAuthorizedPostRequest(json)
@@ -153,7 +278,43 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
     return UUID.fromString(objectMapper.readTree(response).get("id").asText());
   }
 
-  private String tiedoteJson(String idempotencyKey) {
+  private String kituExamineeDetailsJson(String language) {
+    return """
+            {
+              "sukunimi": "Testiläinen",
+              "etunimet": "Testi Testaaja",
+              "katuosoite": "Testikatu 11 C 1",
+              "postinumero": "00100",
+              "postitoimipaikka": "Helsinki",
+              "maa": {
+                "koodiarvo": "FIN",
+                "koodistoUri": "maatjavaltiot1"
+              },
+              "email": "testi.testilainen@testikoulu.fi",
+              "todistuskieli": {
+                "koodiarvo": "%s",
+                "koodistoUri": "kieli"
+              }
+            }
+            """.formatted(language);
+  }
+
+  private String tiedoteJson(String idempotencyKey, String language) {
+    var kituExamineeDetails = kituExamineeDetailsJson(language);
+    return """
+        {
+          "oppijanumero": "%s",
+          "opiskeluoikeusOid": "%s",
+          "todistusBucket": "bucket",
+          "todistusKey": "%s/todistus.pdf",
+          "idempotencyKey": "%s",
+          "kituExamineeDetails": %s
+        }
+        """
+        .formatted(OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey, kituExamineeDetails);
+  }
+
+  private String tiedoteJsonWithoutKituExamineeDetails(String idempotencyKey) {
     return """
         {
           "oppijanumero": "%s",

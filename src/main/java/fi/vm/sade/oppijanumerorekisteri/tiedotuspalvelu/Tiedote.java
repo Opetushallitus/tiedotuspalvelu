@@ -4,6 +4,7 @@ import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.Kielitutk
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SuomiFiViesti;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,9 @@ public class Tiedote {
   public static final String STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA =
       "SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA";
   public static final String STATE_TIEDOTE_KÄSITELTY = "TIEDOTE_KÄSITELTY";
+
+  // default language for todistuskieli, in case it is missing
+  public static final String DEFAULT_TODISTUSKIELI = "fi";
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
@@ -72,6 +76,9 @@ public class Tiedote {
 
   @OneToOne(mappedBy = "tiedote", cascade = CascadeType.ALL, orphanRemoval = true)
   private KielitutkintotodistusPdf kielitutkintotodistusPdf;
+
+  @Column(nullable = true)
+  private String todistuskieli;
 
   @OneToOne(
       mappedBy = "tiedote",
