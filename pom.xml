@@ -17,6 +17,7 @@
 
     <properties>
         <aws.java.sdk.version>2.42.41</aws.java.sdk.version>
+        <logback.version>1.5.22</logback.version>
     </properties>
 
     <dependencies>
