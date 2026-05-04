@@ -1,5 +1,7 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit;
 
+import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_ON_ERROR;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient;
@@ -22,7 +24,8 @@ public class SuomiFiViestitClient {
 
   private final ObjectMapper objectMapper;
   private final TiedotuspalveluProperties properties;
-  private final LoggingHttpClient httpClient = new LoggingHttpClient("suomifi-viestit", true);
+  private final LoggingHttpClient httpClient =
+      new LoggingHttpClient("suomifi-viestit", LoggingHttpClient.LOG_BODY_ALWAYS);
 
   public String sendElectronicMessage(ElectronicMessageRequest request) {
     var token = fetchAccessToken();
@@ -144,7 +147,8 @@ public class SuomiFiViestitClient {
               .header("Content-Type", CONTENT_TYPE_JSON)
               .POST(HttpRequest.BodyPublishers.ofString(payload))
               .build();
-      var response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+      var response =
+          httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString(), LOG_BODY_ON_ERROR);
       if (response.statusCode() < 200 || response.statusCode() >= 300) {
         throw new IllegalStateException(
             "Suomi.fi token call failed with status " + response.statusCode());

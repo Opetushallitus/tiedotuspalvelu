@@ -5,6 +5,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER;
+import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_ALWAYS;
+import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_NEVER;
+import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_ON_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -60,7 +63,7 @@ public class LoggingHttpClientTest {
                     get(urlEqualTo(testPath))
                         .willReturn(aResponse().withStatus(statusCode).withBody("ok")));
 
-                var httpClient = new LoggingHttpClient(testClientName, false);
+                var httpClient = new LoggingHttpClient(testClientName, LOG_BODY_NEVER);
                 var request =
                     HttpRequest.newBuilder()
                         .uri(URI.create(wireMock.baseUrl() + testPath))
@@ -89,7 +92,7 @@ public class LoggingHttpClientTest {
   }
 
   @Test
-  public void logsStringResponseBodyWhenEnabled() throws Exception {
+  public void logsStringResponseBodyWhenDefaultIsAlways() throws Exception {
     var objectMapper = new ObjectMapper();
     var logger = (Logger) LoggerFactory.getLogger(LoggingHttpClient.class);
     var listAppender = new ListAppender<ILoggingEvent>();
@@ -103,7 +106,7 @@ public class LoggingHttpClientTest {
       wireMock.stubFor(
           get(urlEqualTo(testPath)).willReturn(aResponse().withStatus(200).withBody(expectedBody)));
 
-      var httpClient = new LoggingHttpClient(UUID.randomUUID().toString(), true);
+      var httpClient = new LoggingHttpClient(UUID.randomUUID().toString(), LOG_BODY_ALWAYS);
       var request =
           HttpRequest.newBuilder().uri(URI.create(wireMock.baseUrl() + testPath)).GET().build();
 
@@ -118,7 +121,7 @@ public class LoggingHttpClientTest {
   }
 
   @Test
-  public void skipsBodyForNonStringResponseEvenWhenEnabled() throws Exception {
+  public void skipsBodyForNonStringResponseEvenWhenDefaultIsAlways() throws Exception {
     var objectMapper = new ObjectMapper();
     var logger = (Logger) LoggerFactory.getLogger(LoggingHttpClient.class);
     var listAppender = new ListAppender<ILoggingEvent>();
@@ -132,11 +135,90 @@ public class LoggingHttpClientTest {
           get(urlEqualTo(testPath))
               .willReturn(aResponse().withStatus(200).withBody(new byte[] {1, 2, 3})));
 
-      var httpClient = new LoggingHttpClient(UUID.randomUUID().toString(), true);
+      var httpClient = new LoggingHttpClient(UUID.randomUUID().toString(), LOG_BODY_ALWAYS);
       var request =
           HttpRequest.newBuilder().uri(URI.create(wireMock.baseUrl() + testPath)).GET().build();
 
       httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+      var json = objectMapper.readTree(singleLogMessage(listAppender));
+      assertNull(json.get("body"));
+    } finally {
+      logger.detachAppender(listAppender);
+      logger.setLevel(originalLevel);
+    }
+  }
+
+  @Test
+  public void logBodyOnErrorSkipsSuccessButLogsErrors() throws Exception {
+    var objectMapper = new ObjectMapper();
+    var logger = (Logger) LoggerFactory.getLogger(LoggingHttpClient.class);
+    var listAppender = new ListAppender<ILoggingEvent>();
+    listAppender.start();
+    var originalLevel = logger.getLevel();
+    logger.setLevel(Level.INFO);
+    logger.addAppender(listAppender);
+    try {
+      record Case(int statusCode, boolean expectBodyLogged) {}
+      Stream.of(
+              new Case(200, false), new Case(301, false), new Case(400, true), new Case(500, true))
+          .forEach(
+              testCase -> {
+                listAppender.list.clear();
+                var testPath = "/" + UUID.randomUUID();
+                var responseBody = "response body for " + testCase.statusCode();
+                wireMock.stubFor(
+                    get(urlEqualTo(testPath))
+                        .willReturn(
+                            aResponse().withStatus(testCase.statusCode()).withBody(responseBody)));
+
+                var httpClient =
+                    new LoggingHttpClient(UUID.randomUUID().toString(), LOG_BODY_ON_ERROR);
+                var request =
+                    HttpRequest.newBuilder()
+                        .uri(URI.create(wireMock.baseUrl() + testPath))
+                        .GET()
+                        .build();
+
+                try {
+                  httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                  var json = objectMapper.readTree(singleLogMessage(listAppender));
+                  if (testCase.expectBodyLogged()) {
+                    assertEquals(responseBody, json.get("body").asText());
+                  } else {
+                    assertNull(json.get("body"));
+                  }
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    } finally {
+      logger.detachAppender(listAppender);
+      logger.setLevel(originalLevel);
+    }
+  }
+
+  @Test
+  public void perCallPredicateOverridesDefault() throws Exception {
+    var objectMapper = new ObjectMapper();
+    var logger = (Logger) LoggerFactory.getLogger(LoggingHttpClient.class);
+    var listAppender = new ListAppender<ILoggingEvent>();
+    listAppender.start();
+    var originalLevel = logger.getLevel();
+    logger.setLevel(Level.INFO);
+    logger.addAppender(listAppender);
+    try {
+      var testPath = "/" + UUID.randomUUID();
+      var responseBody = "sensitive nyaa~";
+      wireMock.stubFor(
+          get(urlEqualTo(testPath)).willReturn(aResponse().withStatus(200).withBody(responseBody)));
+
+      var httpClient = new LoggingHttpClient(UUID.randomUUID().toString(), LOG_BODY_ALWAYS);
+      var request =
+          HttpRequest.newBuilder().uri(URI.create(wireMock.baseUrl() + testPath)).GET().build();
+
+      httpClient.send(request, HttpResponse.BodyHandlers.ofString(), LOG_BODY_NEVER);
 
       var json = objectMapper.readTree(singleLogMessage(listAppender));
       assertNull(json.get("body"));
@@ -161,7 +243,7 @@ public class LoggingHttpClientTest {
       wireMock.stubFor(
           get(urlEqualTo(testUrl)).willReturn(aResponse().withFault(CONNECTION_RESET_BY_PEER)));
 
-      var httpClient = new LoggingHttpClient(testClientName, false);
+      var httpClient = new LoggingHttpClient(testClientName, LOG_BODY_NEVER);
       var request =
           HttpRequest.newBuilder().uri(URI.create(wireMock.baseUrl() + testUrl)).GET().build();
 

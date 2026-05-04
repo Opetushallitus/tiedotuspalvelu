@@ -28,7 +28,7 @@ public class OppijanumerorekisteriClient {
   private final ObjectMapper objectMapper;
   private final TiedotuspalveluProperties properties;
   private final LoggingHttpClient httpClient =
-      new LoggingHttpClient("oppijanumerorekisteri", false);
+      new LoggingHttpClient("oppijanumerorekisteri", LoggingHttpClient.LOG_BODY_NEVER);
 
   public Oppija getOppija(String oid) throws ValidationException {
     var token = fetchAccessToken();

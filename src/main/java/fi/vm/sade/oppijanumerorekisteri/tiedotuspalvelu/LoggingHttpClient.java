@@ -9,24 +9,39 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LoggingHttpClient {
 
+  public static final Predicate<HttpResponse<?>> LOG_BODY_NEVER = response -> false;
+  public static final Predicate<HttpResponse<?>> LOG_BODY_ALWAYS = response -> true;
+  public static final Predicate<HttpResponse<?>> LOG_BODY_ON_ERROR =
+      response -> response.statusCode() >= 400;
+
   private final String clientName;
-  private final boolean logResponseBody;
+  private final Predicate<HttpResponse<?>> defaultShouldLogResponseBody;
   private final ObjectMapper objectMapper;
   private final HttpClient delegate;
 
-  public LoggingHttpClient(String clientName, boolean logResponseBody) {
+  public LoggingHttpClient(
+      String clientName, Predicate<HttpResponse<?>> defaultShouldLogResponseBody) {
     this.clientName = clientName;
-    this.logResponseBody = logResponseBody;
+    this.defaultShouldLogResponseBody = defaultShouldLogResponseBody;
     this.objectMapper = new ObjectMapper();
     this.delegate = HttpClient.newHttpClient();
   }
 
   public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> bodyHandler)
+      throws IOException, InterruptedException {
+    return send(request, bodyHandler, defaultShouldLogResponseBody);
+  }
+
+  public <T> HttpResponse<T> send(
+      HttpRequest request,
+      HttpResponse.BodyHandler<T> bodyHandler,
+      Predicate<HttpResponse<?>> shouldLogResponseBody)
       throws IOException, InterruptedException {
     var requestTimestamp = Instant.now().toString();
     var startNanos = System.nanoTime();
@@ -35,7 +50,7 @@ public class LoggingHttpClient {
     try {
       var response = delegate.send(request, bodyHandler);
       statusCode = response.statusCode();
-      if (logResponseBody && response.body() instanceof String s) {
+      if (shouldLogResponseBody.test(response) && response.body() instanceof String s) {
         body = s;
       }
       return response;
