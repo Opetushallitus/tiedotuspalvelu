@@ -18,4 +18,4 @@ public record TiedoteDto(
         @NotBlank
         String todistusObjectKey,
     @Valid @Nullable KituExamineeDetailsDto kituExamineeDetails,
-    @Schema(example = "1.2.246.562.15.44316860822") @NotBlank String opiskeluoikeusOid) {}
+    @Schema(example = "1.2.246.562.15.44316860822") String opiskeluoikeusOid) {}

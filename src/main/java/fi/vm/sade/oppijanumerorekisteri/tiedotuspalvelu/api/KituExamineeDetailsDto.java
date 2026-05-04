@@ -7,8 +7,8 @@ import org.springframework.lang.Nullable;
 
 @Builder
 public record KituExamineeDetailsDto (
-    @Schema(example = "Meikäläinen") @NotBlank String sukunimi,
-    @Schema(example = "Matti Matias") @NotBlank String etunimet,
+    @Schema(example = "Meikäläinen") String sukunimi,
+    @Schema(example = "Matti Matias") String etunimet,
     @Schema(example = "Testikatu 12") String katuosoite,
     @Schema(example = "00100") String postinumero,
     @Schema(example = "Helsinki") String postitoimipaikka,

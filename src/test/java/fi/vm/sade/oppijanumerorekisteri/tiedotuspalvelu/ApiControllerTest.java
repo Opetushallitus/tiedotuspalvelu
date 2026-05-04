@@ -151,61 +151,25 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   }
 
   @Test
-  public void permitsRequestWithNoKituExamineeDetails() throws Exception {
+  public void createTiedoteSucceedsWithoutKituExamineeDetails() throws Exception {
     var body = createSimpleBody();
     performAuthorizedPostRequest(body).andExpect(status().isOk());
   }
 
   @Test
-  public void returnsBadRequestForEmptyKituExamineeDetails() throws Exception {
+  public void createTiedoteSucceedsWithEmptyKituExamineeDetails() throws Exception {
     var kituExamineeDetails = "{}";
     var body = createBodyWithKituExamineeDetails(kituExamineeDetails);
-    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(body).andExpect(status().isOk());
   }
 
   @Test
-  public void returnsBadRequestForBlankSukunimi() throws Exception {
+  public void createTiedoteSucceedsWithOnlyTodistuskieli()  throws Exception {
     var kituExamineeDetails = KituExamineeDetailsDto.builder()
-            .etunimet("nimi1 nimi2")
-            .email("email")
-            .katuosoite("katuosoite")
-            .postinumero("00100")
-            .postitoimipaikka("postitoimipaikka")
-            .maa(new KituKoodiarvoDto("FIN", "maatjavaltiot1"))
-            .todistuskieli(new KituKoodiarvoDto("fi", "kieli"));
-    var noSukunimiBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
-    performAuthorizedPostRequest(noSukunimiBody).andExpect(status().isBadRequest());
-
-    kituExamineeDetails.sukunimi("");
-    var emptySukunimiBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
-    performAuthorizedPostRequest(emptySukunimiBody).andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void returnsBadRequestForBlankEtunimet() throws Exception {
-    var kituExamineeDetails = KituExamineeDetailsDto.builder()
-            .sukunimi("sukunimi")
-            .email("email")
-            .katuosoite("katuosoite")
-            .postinumero("00100")
-            .postitoimipaikka("postitoimipaikka")
-            .maa(new KituKoodiarvoDto("FIN", "maatjavaltiot1"))
-            .todistuskieli(new KituKoodiarvoDto("fi", "kieli"));
-    var noEtunimetBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
-    performAuthorizedPostRequest(noEtunimetBody).andExpect(status().isBadRequest());
-
-    kituExamineeDetails.etunimet("");
-    var emptyEtunimetBody = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails.build()));
-    performAuthorizedPostRequest(emptyEtunimetBody).andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void permitsKituExamineeDetailsWithOnlySukunimiAndEtunimet() throws Exception {
-    var kituExamineeDetails = KituExamineeDetailsDto.builder()
-            .sukunimi("sukunimi")
-            .etunimet("etunimet")
+            .todistuskieli(new KituKoodiarvoDto("FI", "kieli"))
             .build();
-    var body = createBodyWithKituExamineeDetails(objectMapper.writeValueAsString(kituExamineeDetails));
+    var kituExamineeDetailsJson = objectMapper.writeValueAsString(kituExamineeDetails);
+    var body = createBodyWithKituExamineeDetails(kituExamineeDetailsJson);
     performAuthorizedPostRequest(body).andExpect(status().isOk());
   }
 
@@ -312,19 +276,6 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         }
         """
         .formatted(OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey, kituExamineeDetails);
-  }
-
-  private String tiedoteJsonWithoutKituExamineeDetails(String idempotencyKey) {
-    return """
-        {
-          "oppijanumero": "%s",
-          "opiskeluoikeusOid": "%s",
-          "todistusBucket": "bucket",
-          "todistusKey": "%s/todistus.pdf",
-          "idempotencyKey": "%s"
-        }
-        """
-        .formatted(OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey);
   }
 
   private @NonNull ResultActions performAuthorizedPostRequest(String content) throws Exception {
