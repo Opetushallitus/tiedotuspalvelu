@@ -26,9 +26,17 @@ public class CsvExportTest extends TiedotuspalveluApiTest implements ResourceRea
   }
 
   @Test
-  void csvEndpointWorksWithProperRole() throws Exception {
+  void csvEndpointReturnsForbiddenForUserWithOnlyCrudRole() throws Exception {
     mockMvc
         .perform(get("/tiedotuspalvelu/ui/tiedotteet/csv").with(user(VIRKAILIJA_WITH_CRUD_ROLE)))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void csvEndpointWorksWithRaportointiRole() throws Exception {
+    mockMvc
+        .perform(
+            get("/tiedotuspalvelu/ui/tiedotteet/csv").with(user(VIRKAILIJA_WITH_RAPORTOINTI_ROLE)))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "text/csv"))
         .andExpect(
@@ -40,6 +48,25 @@ public class CsvExportTest extends TiedotuspalveluApiTest implements ResourceRea
   void setup() {
     clearDatabase();
   }
+
+  private final CasVirkailijaUserDetailsService.CasAuthenticatedUser
+      VIRKAILIJA_WITH_RAPORTOINTI_ROLE =
+          CasVirkailijaUserDetailsService.CasAuthenticatedUser.builder()
+              .username("riinaraportoija")
+              .attributes(
+                  Map.of(
+                      "oidHenkilo",
+                      List.of("1.2.246.562.24.80170786687"),
+                      "kayttajaTyyppi",
+                      List.of("VIRKAILIJA"),
+                      "idpEntityId",
+                      List.of("usernamePassword")))
+              .authorities(
+                  List.of(
+                      new SimpleGrantedAuthority("ROLE_APP_TIEDOTUSPALVELU_RAPORTOINTI"),
+                      new SimpleGrantedAuthority(
+                          "ROLE_APP_TIEDOTUSPALVELU_RAPORTOINTI_1.2.246.562.10.00000000001")))
+              .build();
 
   private final CasVirkailijaUserDetailsService.CasAuthenticatedUser VIRKAILIJA_WITH_CRUD_ROLE =
       CasVirkailijaUserDetailsService.CasAuthenticatedUser.builder()

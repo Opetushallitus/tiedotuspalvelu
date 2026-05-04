@@ -15,45 +15,45 @@ class CasVirkailijaAssumptionsTest extends CasAssumptionsTestBase {
 
   @Test
   void assumeCasVirkailijaReturnsKäyttäjätunnusAsUsername() throws Exception {
-    var assertion = authenticateAndValidate("tiinatiedottaja", "tiinatiedottaja");
-    assertThat(assertion.getPrincipal().getName()).isEqualTo("tiinatiedottaja");
+    var assertion = authenticateAndValidate("riinaraportoija", "riinaraportoija");
+    assertThat(assertion.getPrincipal().getName()).isEqualTo("riinaraportoija");
   }
 
   @Test
   void assumeCasVirkailijaReturnsHenkiloOid() throws Exception {
-    var assertion = authenticateAndValidate("tiinatiedottaja", "tiinatiedottaja");
+    var assertion = authenticateAndValidate("riinaraportoija", "riinaraportoija");
     assertThat(assertion.getPrincipal().getAttributes().get("oidHenkilo"))
-        .isEqualTo("1.2.246.562.24.52606915412");
+        .isEqualTo("1.2.246.562.24.80170786687");
   }
 
   @Test
   void assumeCasVirkailijaReturnsKayttajaTyyppi() throws Exception {
-    var assertion = authenticateAndValidate("tiinatiedottaja", "tiinatiedottaja");
+    var assertion = authenticateAndValidate("riinaraportoija", "riinaraportoija");
     assertThat(assertion.getPrincipal().getAttributes().get("kayttajaTyyppi"))
         .isEqualTo("VIRKAILIJA");
   }
 
   @Test
   void assumeCasVirkailijaReturnsIdpEntityId() throws Exception {
-    var assertion = authenticateAndValidate("tiinatiedottaja", "tiinatiedottaja");
+    var assertion = authenticateAndValidate("riinaraportoija", "riinaraportoija");
     assertThat(assertion.getPrincipal().getAttributes().get("idpEntityId"))
         .isEqualTo("usernamePassword");
   }
 
   @Test
   void assumeCasVirkailijaReturnsKnownFields() throws Exception {
-    var assertion = authenticateAndValidate("tiinatiedottaja", "tiinatiedottaja");
+    var assertion = authenticateAndValidate("riinaraportoija", "riinaraportoija");
     assertThat(assertion.getPrincipal().getAttributes().keySet())
         .containsExactlyInAnyOrder("oidHenkilo", "kayttajaTyyppi", "idpEntityId", "roles");
   }
 
   @Test
   void assumeCasVirkailijaReturnsRoles() throws Exception {
-    var assertion = authenticateAndValidate("tiinatiedottaja", "tiinatiedottaja");
+    var assertion = authenticateAndValidate("riinaraportoija", "riinaraportoija");
     assertThat((List<String>) assertion.getPrincipal().getAttributes().get("roles"))
         .containsExactlyInAnyOrder(
-            "ROLE_APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD",
-            "ROLE_APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD_1.2.246.562.10.00000000001");
+            "ROLE_APP_TIEDOTUSPALVELU_RAPORTOINTI",
+            "ROLE_APP_TIEDOTUSPALVELU_RAPORTOINTI_1.2.246.562.10.00000000001");
   }
 
   @Override

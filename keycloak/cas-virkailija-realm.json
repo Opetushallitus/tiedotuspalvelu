@@ -4,7 +4,7 @@
   "sslRequired": "none",
   "loginTheme": "dev-quicklogin",
   "attributes": {
-    "quickLoginUsers": "[{\"label\":\"Tiina Tiedottaja\",\"username\":\"tiinatiedottaja\",\"password\":\"tiinatiedottaja\"},{\"label\":\"Emmi Ei-Oikkia\",\"username\":\"emmieioikkia\",\"password\":\"emmieioikkia\"}]"
+    "quickLoginUsers": "[{\"label\":\"Riina Raportoija\",\"username\":\"riinaraportoija\",\"password\":\"riinaraportoija\"},{\"label\":\"Emmi Ei-Oikkia\",\"username\":\"emmieioikkia\",\"password\":\"emmieioikkia\"}]"
   },
   "requiredActions": [
     {
@@ -74,20 +74,20 @@
   ],
   "users": [
     {
-      "username": "tiinatiedottaja",
+      "username": "riinaraportoija",
       "enabled": true,
-      "firstName": "Tiina",
-      "lastName": "Tiedottaja",
+      "firstName": "Riina",
+      "lastName": "Raportoija",
       "credentials": [
         {
           "type": "password",
-          "value": "tiinatiedottaja",
+          "value": "riinaraportoija",
           "temporary": false
         }
       ],
       "attributes": {
         "oidHenkilo": [
-          "1.2.246.562.24.52606915412"
+          "1.2.246.562.24.80170786687"
         ],
         "kayttajaTyyppi": [
           "VIRKAILIJA"
@@ -96,8 +96,8 @@
           "usernamePassword"
         ],
         "roles": [
-          "ROLE_APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD",
-          "ROLE_APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD_1.2.246.562.10.00000000001"
+          "ROLE_APP_TIEDOTUSPALVELU_RAPORTOINTI",
+          "ROLE_APP_TIEDOTUSPALVELU_RAPORTOINTI_1.2.246.562.10.00000000001"
         ]
       }
     },

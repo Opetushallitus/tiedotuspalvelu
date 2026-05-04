@@ -26,13 +26,13 @@ public class VirkailijaUiController {
   private final LocalisationRepository localisationRepository;
 
   @GetMapping("/localisations")
-  @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD')")
+  @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_RAPORTOINTI')")
   List<LocalisationRepository.LocalisationDto> getLocalisations() {
     return localisationRepository.findAllByCategoryWithFallback("tiedotuspalvelu");
   }
 
   @GetMapping("/me")
-  @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD')")
+  @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_RAPORTOINTI')")
   public MeResponse me() {
     var auth = SecurityContextHolder.getContext().getAuthentication();
     var principal = (CasVirkailijaUserDetailsService.CasAuthenticatedUser) auth.getPrincipal();
@@ -40,7 +40,7 @@ public class VirkailijaUiController {
   }
 
   @GetMapping("/tiedotteet/csv")
-  @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD')")
+  @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_RAPORTOINTI')")
   public ResponseEntity<byte[]> tiedotteetCsv() {
     var csvBytes =
         jdbcTemplate.execute(
