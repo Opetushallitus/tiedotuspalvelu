@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;

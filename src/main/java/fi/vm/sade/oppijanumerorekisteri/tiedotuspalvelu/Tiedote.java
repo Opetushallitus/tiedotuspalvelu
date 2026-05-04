@@ -4,7 +4,6 @@ import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.Kielitutk
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SuomiFiViesti;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
-import java.util.Locale;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

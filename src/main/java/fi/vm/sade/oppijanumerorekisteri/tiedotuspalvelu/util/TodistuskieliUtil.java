@@ -22,7 +22,9 @@ public class TodistuskieliUtil {
 
   public static String getTodistuskieli(Tiedote tiedote) {
     if (tiedote.getTodistuskieli() == null) {
-      log.warn("tiedote.todistuskieli is null, using default language (%s) instead".formatted(Tiedote.DEFAULT_TODISTUSKIELI));
+      log.warn(
+          "tiedote.todistuskieli is null, using default language (%s) instead"
+              .formatted(Tiedote.DEFAULT_TODISTUSKIELI));
       return Tiedote.DEFAULT_TODISTUSKIELI;
     }
 
