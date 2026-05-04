@@ -32,7 +32,7 @@ test("Kielitutkintotodistus - Suomi.fi-viestit ei käytössä", async ({
 
   await test.step("Virkailija näkee tiedoteen rapsalla", async () => {
     await page.goto("/tiedotuspalvelu/");
-    await page.getByRole("button", { name: "Tiina Tiedottaja" }).click();
+    await page.getByRole("button", { name: "Riina Raportoija" }).click();
     await expect(
       page.getByRole("button", { name: "Lataa kaikki tiedotteet CSV:nä" }),
     ).toBeVisible();
