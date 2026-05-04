@@ -4,6 +4,8 @@ import { devices } from "@playwright/test";
 const backendPort = Number(process.env.SERVER_PORT);
 
 const isCI = !!process.env.CODEBUILD_BUILD_ID || !!process.env.GITHUB_ACTIONS;
+const isAgent = !!process.env.CLAUDECODE;
+const headless = isCI || isAgent;
 
 const config: PlaywrightTestConfig = {
   testDir: "./e2e",
@@ -17,7 +19,7 @@ const config: PlaywrightTestConfig = {
   workers: 1,
   reporter: [
     ["list", { printSteps: true }],
-    ["html", { open: isCI ? "never" : "always" }],
+    ["html", { open: headless ? "never" : "always" }],
     [
       "junit",
       {
@@ -28,7 +30,7 @@ const config: PlaywrightTestConfig = {
   use: {
     actionTimeout: 0,
     baseURL: `http://localhost:${backendPort}`,
-    headless: isCI,
+    headless,
     trace: isCI ? "on-first-retry" : "on",
   },
 
