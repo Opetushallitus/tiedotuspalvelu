@@ -29,12 +29,29 @@ export async function runFetchKielitutkintotodistusTask(
   expect(response.ok()).toBeTruthy();
 }
 
+type KituKoodiarvo = {
+  koodiarvo: string;
+  koodistoUri: string;
+}
+
+type KituExamineeDetailsDto = {
+  etunimet: string;
+  sukunimi: string;
+  katuosoite?: string;
+  postinumero?: string;
+  postitoimipaikka?: string;
+  maa?: KituKoodiarvo;
+  email?: string;
+  todistuskieli?: KituKoodiarvo;
+}
+
 export type TiedoteDto = {
   oppijanumero: string;
   idempotencyKey: string;
   todistusBucket: string;
   todistusKey: string;
   opiskeluoikeusOid: string;
+  kituExamineeDetails?: KituExamineeDetailsDto;
 };
 
 export async function createTiedote(

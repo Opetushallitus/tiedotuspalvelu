@@ -26,6 +26,14 @@ test("Kielitutkintotodistus - Suomi.fi-viestit käytössä", async ({
       todistusBucket: "bucket",
       todistusKey: `${todistusUuid}/todistus.pdf`,
       opiskeluoikeusOid: await generateOpiskeluoikeusOid(request),
+      kituExamineeDetails: {
+        etunimet: "Matti Mauno",
+        sukunimi: "Meikäläinen",
+        todistuskieli: {
+          koodiarvo: "FI",
+          koodistoUri: "kieli"
+        }
+      }
     });
   });
 
