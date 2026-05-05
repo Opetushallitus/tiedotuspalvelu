@@ -85,4 +85,11 @@ public class Tiedote {
       orphanRemoval = true,
       fetch = FetchType.EAGER)
   private SuomiFiViesti viesti;
+
+  public String getTodistuskieliElseDefault() {
+    if (this.todistuskieli == null) {
+      return DEFAULT_TODISTUSKIELI;
+    }
+    return this.todistuskieli;
+  }
 }

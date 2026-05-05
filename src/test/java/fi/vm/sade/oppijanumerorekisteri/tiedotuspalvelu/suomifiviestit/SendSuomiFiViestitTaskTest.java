@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.transaction.annotation.Transactional;
 
 public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implements ResourceReader {
 
@@ -209,6 +211,78 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
     assertNotNull(updatedTiedote.getViesti().getProcessedAt());
     assertEquals("msg-456", updatedTiedote.getViesti().getMessageId());
     assertEquals(0, updatedTiedote.getRetryCount());
+  }
+
+  @Test
+  @Transactional
+  @Sql(
+      value = {"/data/localisations.sql"},
+      executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+  public void usesTodistuskieliFromTiedoteAsLocalisationLanguage() throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages/electronic"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody("{\"messageId\": \"%s\"}".formatted(SUOMIFI_MESSAGE_ID))));
+
+    var swedishTiedote = createTiedoteAndRunTask(t -> t.setTodistuskieli("SV"));
+    assertThat(swedishTiedote.getViesti().getOtsikko()).isEqualTo("(SV) tiedote viesti otsikko");
+    assertThat(swedishTiedote.getViesti().getSisalto()).isEqualTo("(SV) tiedote viesti sisältö");
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/v2/messages/electronic"))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.title", equalTo("(SV) tiedote viesti otsikko")))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.body", equalTo("(SV) tiedote viesti sisältö"))));
+
+    var englishTiedote = createTiedoteAndRunTask(t -> t.setTodistuskieli("EN"));
+    assertThat(englishTiedote.getViesti().getOtsikko()).isEqualTo("(EN) tiedote viesti otsikko");
+    assertThat(englishTiedote.getViesti().getSisalto()).isEqualTo("(EN) tiedote viesti sisältö");
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/v2/messages/electronic"))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.title", equalTo("(EN) tiedote viesti otsikko")))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.body", equalTo("(EN) tiedote viesti sisältö"))));
+
+    var finnishTiedote = createTiedoteAndRunTask(t -> t.setTodistuskieli("FI"));
+    assertThat(finnishTiedote.getViesti().getOtsikko()).isEqualTo("(FI) tiedote viesti otsikko");
+    assertThat(finnishTiedote.getViesti().getSisalto()).isEqualTo("(FI) tiedote viesti sisältö");
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/v2/messages/electronic"))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.title", equalTo("(FI) tiedote viesti otsikko")))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.body", equalTo("(FI) tiedote viesti sisältö"))));
+  }
+
+  @Test
+  @Transactional
+  @Sql(
+      value = {"/data/localisations.sql"},
+      executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+  public void useDefaultLanguageFinnishIfTodistuskieliIsNull() throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages/electronic"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody("{\"messageId\": \"%s\"}".formatted(SUOMIFI_MESSAGE_ID))));
+
+    var defaultFinnishTiedote = createTiedoteAndRunTask(t -> t.setTodistuskieli(null));
+    assertThat(defaultFinnishTiedote.getViesti().getOtsikko())
+        .isEqualTo("(FI) tiedote viesti otsikko");
+    assertThat(defaultFinnishTiedote.getViesti().getSisalto())
+        .isEqualTo("(FI) tiedote viesti sisältö");
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/v2/messages/electronic"))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.title", equalTo("(FI) tiedote viesti otsikko")))
+            .withRequestBody(
+                matchingJsonPath("$.electronic.body", equalTo("(FI) tiedote viesti sisältö"))));
   }
 
   private void stubGettingSuomiFiViestitAccessToken() {

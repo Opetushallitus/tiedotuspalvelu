@@ -40,13 +40,13 @@ public class LocalisationRepository {
   public String translate(String key, String category, String locale) {
     var all = findAllByCategoryWithFallback(category);
     return all.stream()
-        .filter(l -> l.key().equals(key) && l.locale().equals(locale))
+        .filter(l -> l.key().equals(key) && l.locale().equalsIgnoreCase(locale))
         .map(LocalisationDto::value)
         .findFirst()
         .or(
             () ->
                 all.stream()
-                    .filter(l -> l.key().equals(key) && l.locale().equals("fi"))
+                    .filter(l -> l.key().equalsIgnoreCase(key) && l.locale().equals("fi"))
                     .map(LocalisationDto::value)
                     .findFirst())
         .orElse(key);
