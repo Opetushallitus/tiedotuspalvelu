@@ -32,9 +32,9 @@ test("Kielitutkintotodistus - Suomi.fi-viestit ei käytössä", async ({
         sukunimi: "Meikäläinen",
         todistuskieli: {
           koodiarvo: "FI",
-          koodistoUri: "kieli"
-        }
-      }
+          koodistoUri: "kieli",
+        },
+      },
     });
   });
 

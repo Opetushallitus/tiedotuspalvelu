@@ -31,9 +31,9 @@ test("Kielitutkintotodistus - Suomi.fi-viestit käytössä", async ({
         sukunimi: "Meikäläinen",
         todistuskieli: {
           koodiarvo: "FI",
-          koodistoUri: "kieli"
-        }
-      }
+          koodistoUri: "kieli",
+        },
+      },
     });
   });
 

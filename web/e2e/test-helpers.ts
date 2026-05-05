@@ -32,7 +32,7 @@ export async function runFetchKielitutkintotodistusTask(
 type KituKoodiarvo = {
   koodiarvo: string;
   koodistoUri: string;
-}
+};
 
 type KituExamineeDetailsDto = {
   etunimet: string;
@@ -43,7 +43,7 @@ type KituExamineeDetailsDto = {
   maa?: KituKoodiarvo;
   email?: string;
   todistuskieli?: KituKoodiarvo;
-}
+};
 
 export type TiedoteDto = {
   oppijanumero: string;
