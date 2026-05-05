@@ -83,7 +83,13 @@ public class OauthConfigurationTest extends TiedotuspalveluApiTest {
              "opiskeluoikeusOid": "1.2.246.562.15.00000000001",
              "todistusBucket": "bucket",
              "todistusKey": "%s/todistus.pdf",
-             "idempotencyKey": "%s"
+             "idempotencyKey": "%s",
+             "kituExamineeDetails": {
+                "todistuskieli": {
+                  "koodiarvo": "FI",
+                  "koodistoUri": "kieli"
+                }
+             }
            }
            """
         .formatted(uuid, uuid);

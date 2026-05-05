@@ -3,6 +3,8 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituExamineeDetailsDto;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituKoodiarvoDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.TiedoteDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.TiedoteResponse;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasOppijaUserDetailsService;
@@ -84,13 +86,16 @@ public class TiedotuspalveluApiTest {
 
   protected Tiedote createTiedote(Consumer<TiedoteDto.TiedoteDtoBuilder> requestModifier)
       throws Exception {
+    var kituExamineeDetailsDto =
+        KituExamineeDetailsDto.builder().todistuskieli(new KituKoodiarvoDto("FI", "kieli")).build();
     var builder =
         TiedoteDto.builder()
             .oppijanumero(OidGenerator.generateHenkiloOid())
             .idempotencyKey(UUID.randomUUID().toString())
             .todistusBucketName("koski-tiedotuspalvelu")
             .todistusObjectKey("2d08a8dc-378e-40aa-a3ce-5d987795e619/tiedote.pdf")
-            .opiskeluoikeusOid(OidGenerator.generateOpiskeluoikeusOid());
+            .opiskeluoikeusOid(OidGenerator.generateOpiskeluoikeusOid())
+            .kituExamineeDetails(kituExamineeDetailsDto);
     requestModifier.accept(builder);
 
     var content = objectMapper.writeValueAsString(builder.build());

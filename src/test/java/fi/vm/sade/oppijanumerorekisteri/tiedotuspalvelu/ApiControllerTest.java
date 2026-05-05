@@ -163,7 +163,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
   @Test
   public void createTiedoteWithEmptyTodistuskieliReturnsBadRequest() throws Exception {
-    var kituExamineeDetails = """
+    var kituExamineeDetails =
+        """
             {
               "todistuskieli": null
             }
@@ -176,34 +177,47 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   public void createTiedoteWithEmptyTodistuskieliKoodiarvoReturnsBadRequest() throws Exception {
     var validKoodistoUri = "kieli";
 
-    var nullTodistuskieliKoodiarvo = objectMapper.writeValueAsString(new KituKoodiarvoDto(null, validKoodistoUri));
-    var nullTodistuskieliKoodiarvoBody = createBodyWithKituExamineeDetails(nullTodistuskieliKoodiarvo);
+    var nullTodistuskieliKoodiarvo =
+        objectMapper.writeValueAsString(new KituKoodiarvoDto(null, validKoodistoUri));
+    var nullTodistuskieliKoodiarvoBody =
+        createBodyWithKituExamineeDetails(nullTodistuskieliKoodiarvo);
     performAuthorizedPostRequest(nullTodistuskieliKoodiarvoBody).andExpect(status().isBadRequest());
 
-    var emptyStringTodistuskieliKoodiarvo = objectMapper.writeValueAsString(new KituKoodiarvoDto("", validKoodistoUri));
-    var emptyStringTodistuskieliKoodiarvoBody = createBodyWithKituExamineeDetails(emptyStringTodistuskieliKoodiarvo);
-    performAuthorizedPostRequest(emptyStringTodistuskieliKoodiarvoBody).andExpect(status().isBadRequest());
+    var emptyStringTodistuskieliKoodiarvo =
+        objectMapper.writeValueAsString(new KituKoodiarvoDto("", validKoodistoUri));
+    var emptyStringTodistuskieliKoodiarvoBody =
+        createBodyWithKituExamineeDetails(emptyStringTodistuskieliKoodiarvo);
+    performAuthorizedPostRequest(emptyStringTodistuskieliKoodiarvoBody)
+        .andExpect(status().isBadRequest());
 
-    var trimmedEmptyStringTodistuskieliKoodiarvo = objectMapper.writeValueAsString(new KituKoodiarvoDto("     ", validKoodistoUri));
-    var trimmedEmptyStringTodistuskieliKoodiarvoBody = createBodyWithKituExamineeDetails(trimmedEmptyStringTodistuskieliKoodiarvo);
-    performAuthorizedPostRequest(trimmedEmptyStringTodistuskieliKoodiarvoBody).andExpect(status().isBadRequest());
+    var trimmedEmptyStringTodistuskieliKoodiarvo =
+        objectMapper.writeValueAsString(new KituKoodiarvoDto("     ", validKoodistoUri));
+    var trimmedEmptyStringTodistuskieliKoodiarvoBody =
+        createBodyWithKituExamineeDetails(trimmedEmptyStringTodistuskieliKoodiarvo);
+    performAuthorizedPostRequest(trimmedEmptyStringTodistuskieliKoodiarvoBody)
+        .andExpect(status().isBadRequest());
   }
 
   @Test
   public void createTiedoteWithEmptyTodistuskieliKoodistoUriReturnsBadRequest() throws Exception {
     var validKoodiarvo = "fi";
 
-    var nullKoodistoUri = objectMapper.writeValueAsString(new KituKoodiarvoDto(validKoodiarvo, null));
+    var nullKoodistoUri =
+        objectMapper.writeValueAsString(new KituKoodiarvoDto(validKoodiarvo, null));
     var nullKoodistoUriBody = createBodyWithKituExamineeDetails(nullKoodistoUri);
     performAuthorizedPostRequest(nullKoodistoUriBody).andExpect(status().isBadRequest());
 
-    var emptyStringKoodistoUri = objectMapper.writeValueAsString(new KituKoodiarvoDto(validKoodiarvo, ""));
+    var emptyStringKoodistoUri =
+        objectMapper.writeValueAsString(new KituKoodiarvoDto(validKoodiarvo, ""));
     var emptyStringKoodistoUriBody = createBodyWithKituExamineeDetails(emptyStringKoodistoUri);
     performAuthorizedPostRequest(emptyStringKoodistoUriBody).andExpect(status().isBadRequest());
 
-    var trimmableEmptyStringKoodistoUri = objectMapper.writeValueAsString(new KituKoodiarvoDto(validKoodiarvo, "    "));
-    var trimmableEmptyStringKoodistoUriBody = createBodyWithKituExamineeDetails(trimmableEmptyStringKoodistoUri);
-    performAuthorizedPostRequest(trimmableEmptyStringKoodistoUriBody).andExpect(status().isBadRequest());
+    var trimmableEmptyStringKoodistoUri =
+        objectMapper.writeValueAsString(new KituKoodiarvoDto(validKoodiarvo, "    "));
+    var trimmableEmptyStringKoodistoUriBody =
+        createBodyWithKituExamineeDetails(trimmableEmptyStringKoodistoUri);
+    performAuthorizedPostRequest(trimmableEmptyStringKoodistoUriBody)
+        .andExpect(status().isBadRequest());
   }
 
   @Test
