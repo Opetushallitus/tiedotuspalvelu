@@ -1,0 +1,1 @@
+ALTER TABLE tiedote ADD COLUMN todistuskieli_koodisto_uri TEXT;

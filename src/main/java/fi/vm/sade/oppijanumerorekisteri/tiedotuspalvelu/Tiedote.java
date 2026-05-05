@@ -79,6 +79,9 @@ public class Tiedote {
   @Column(nullable = true)
   private String todistuskieli;
 
+  @Column(name = "todistuskieli_koodisto_uri", nullable = true)
+  private String todistuskieliKoodistoUri;
+
   @OneToOne(
       mappedBy = "tiedote",
       cascade = CascadeType.ALL,

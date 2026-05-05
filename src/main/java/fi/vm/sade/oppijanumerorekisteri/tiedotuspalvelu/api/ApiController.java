@@ -3,13 +3,13 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.Tiedote;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedoteRepository;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SuomiFiViestitEventRepository;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.util.TodistuskieliUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,20 +47,7 @@ public class ApiController {
       return buildTiedoteResponse(existingTiedote.get());
     }
 
-    var opiskeluoikeusOid =
-        tiedoteDto.opiskeluoikeusOid() != null ? tiedoteDto.opiskeluoikeusOid() : "[uupuu]";
-
-    var tiedote =
-        Tiedote.builder()
-            .oppijanumero(tiedoteDto.oppijanumero())
-            .idempotencyKey(tiedoteDto.idempotencyKey())
-            .todistusBucketName(tiedoteDto.todistusBucketName())
-            .todistusObjectKey(tiedoteDto.todistusObjectKey())
-            .opiskeluoikeusOid(opiskeluoikeusOid)
-            .type(Tiedote.TYPE_KIELITUTKINTOTODISTUS)
-            .state(Tiedote.STATE_OPPIJAN_VALIDOINTI)
-            .todistuskieli(TodistuskieliUtil.getTodistuskieli(tiedoteDto))
-            .build();
+    var tiedote = TiedoteDtoMapper.toModel(tiedoteDto);
     tiedoteRepository.saveAndFlush(tiedote);
     entityManager.refresh(tiedote);
     return buildTiedoteResponse(tiedote);
