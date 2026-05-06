@@ -651,17 +651,11 @@ class TiedotuspalveluStack extends cdk.Stack {
     const filters = [
       {
         metricName: `RequestsFromKoski2XXCount`,
-        pattern: logs.FilterPattern.all(
-          logs.FilterPattern.numberValue("$.httpCode", ">=", 200),
-          logs.FilterPattern.numberValue("$.httpCode", "<", 300),
-        ),
+        pattern: logs.FilterPattern.stringValue("$.responseCode", "=", "2*"),
       },
       {
         metricName: `RequestsFromKoski4XXCount`,
-        pattern: logs.FilterPattern.all(
-          logs.FilterPattern.numberValue("$.httpCode", ">=", 400),
-          logs.FilterPattern.numberValue("$.httpCode", "<", 500),
-        ),
+        pattern: logs.FilterPattern.stringValue("$.responseCode", "=", "4*"),
         alarmProps: {
           comparisonOperator:
             cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
@@ -670,7 +664,7 @@ class TiedotuspalveluStack extends cdk.Stack {
       },
       {
         metricName: `RequestsFromKoski5XXCount`,
-        pattern: logs.FilterPattern.numberValue("$.httpCode", ">=", 500),
+        pattern: logs.FilterPattern.stringValue("$.responseCode", "=", "5*"),
         alarmProps: {
           comparisonOperator:
             cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
