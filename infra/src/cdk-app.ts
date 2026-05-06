@@ -680,7 +680,7 @@ class TiedotuspalveluStack extends cdk.Stack {
     ];
     for (const { metricName, pattern, alarmProps } of filters) {
       const metricFilter = logGroup.addMetricFilter(`${metricName}Filter`, {
-        metricNamespace: "TODO",
+        metricNamespace: "Tiedotuspalvelu",
         metricName: `${metricName}`,
         filterPattern: logs.FilterPattern.all(
           this.isApiEndpoint(),
