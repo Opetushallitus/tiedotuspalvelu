@@ -27,8 +27,8 @@ test("Kielitutkintotodistus - Suomi.fi-viestit käytössä", async ({
       todistusKey: `${todistusUuid}/todistus.pdf`,
       opiskeluoikeusOid: await generateOpiskeluoikeusOid(request),
       kituExamineeDetails: {
-        etunimet: "Matti Mauno",
-        sukunimi: "Meikäläinen",
+        etunimet: "Henna Kaarina",
+        sukunimi: "Sevillantes",
         katuosoite: "Testikatu e2e A 11 F",
         maa: {
           koodiarvo: "FIN",
