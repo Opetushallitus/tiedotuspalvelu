@@ -21,6 +21,7 @@ import * as path from "node:path";
 import { createHealthCheckStacks } from "./health-check";
 import * as alarms from "./alarms";
 import * as constants from "./constants";
+import { ResponseAlarms } from "./response-alarms";
 
 const config = getConfig();
 
@@ -305,6 +306,7 @@ class TiedotuspalveluStack extends cdk.Stack {
       logGroupName: "Tiedotuspalvelu/tiedotuspalvelu",
       retention: logs.RetentionDays.INFINITE,
     });
+    this.koskiErrorsAlarm(logGroup);
 
     if (config.tiedotuspalveluCapacity.max > 0) {
       if (config.features["tiedotuspalvelu.fetch-oppija.enabled"]) {
@@ -553,7 +555,7 @@ class TiedotuspalveluStack extends cdk.Stack {
         open: true,
         certificates: [certificate],
       });
-      listener.addTargets("ServiceTarget", {
+      const target = listener.addTargets("ServiceTarget", {
         port: appPort,
         targets: [service],
         healthCheck: {
@@ -562,6 +564,14 @@ class TiedotuspalveluStack extends cdk.Stack {
           path: "/omat-viestit/actuator/health",
           port: appPort.toString(),
         },
+      });
+      new ResponseAlarms(this, "ResponseAlarms", {
+        prefix: "Tiedotuspalvelu",
+        alarmTopic: props.alarmTopic,
+        alb,
+        albThreshold: 1,
+        target,
+        targetThreshold: 1,
       });
     }
   }
@@ -625,6 +635,84 @@ class TiedotuspalveluStack extends cdk.Stack {
       ),
       cdk.Duration.hours(2),
       1,
+    );
+  }
+
+  koskiErrorsAlarm(logGroup: logs.LogGroup) {
+    const koskiHenkiloOidForAlarms = ssm.StringParameter.valueFromLookup(
+      this,
+      "koski-henkilo-oid-for-alarms",
+      "-",
+    );
+    if (koskiHenkiloOidForAlarms === "-") {
+      return;
+    }
+
+    const filters = [
+      {
+        metricName: `RequestsFromKoski2XXCount`,
+        pattern: logs.FilterPattern.all(
+          logs.FilterPattern.numberValue("$.httpCode", ">=", 200),
+          logs.FilterPattern.numberValue("$.httpCode", "<", 300),
+        ),
+      },
+      {
+        metricName: `RequestsFromKoski4XXCount`,
+        pattern: logs.FilterPattern.all(
+          logs.FilterPattern.numberValue("$.httpCode", ">=", 400),
+          logs.FilterPattern.numberValue("$.httpCode", "<", 500),
+        ),
+        alarmProps: {
+          comparisonOperator:
+            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+          threshold: 1,
+        },
+      },
+      {
+        metricName: `RequestsFromKoski5XXCount`,
+        pattern: logs.FilterPattern.numberValue("$.httpCode", ">=", 500),
+        alarmProps: {
+          comparisonOperator:
+            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+          threshold: 1,
+        },
+      },
+    ];
+    for (const { metricName, pattern, alarmProps } of filters) {
+      const metricFilter = logGroup.addMetricFilter(`${metricName}Filter`, {
+        metricNamespace: "TODO",
+        metricName: `${metricName}`,
+        filterPattern: logs.FilterPattern.all(
+          this.isApiEndpoint(),
+          this.fromCaller(koskiHenkiloOidForAlarms),
+          pattern,
+        ),
+        metricValue: "1",
+      });
+      if (alarmProps) {
+        metricFilter.metric().createAlarm(this, `${metricName}Alarm`, {
+          alarmName: `${metricName}Alarm`,
+          treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+          evaluationPeriods: 1,
+          ...alarmProps,
+        });
+      }
+    }
+  }
+
+  isApiEndpoint() {
+    return logs.FilterPattern.stringValue(
+      "$.requestMapping",
+      "=",
+      "/omat-viestit/api/*",
+    );
+  }
+
+  fromCaller(callerHenkiloOid: string) {
+    return logs.FilterPattern.stringValue(
+      "$.callerHenkiloOid",
+      "=",
+      callerHenkiloOid,
     );
   }
 }
