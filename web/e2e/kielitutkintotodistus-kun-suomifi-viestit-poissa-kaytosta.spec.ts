@@ -30,6 +30,11 @@ test("Kielitutkintotodistus - Suomi.fi-viestit ei käytössä", async ({
       kituExamineeDetails: {
         etunimet: "Matti Mauno",
         sukunimi: "Meikäläinen",
+        katuosoite: "Testikatu e2e A 11 F",
+        maa: {
+          koodiarvo: "FIN",
+          koodistoUri: "maatjavaltiot1",
+        },
         todistuskieli: {
           koodiarvo: "FI",
           koodistoUri: "kieli",

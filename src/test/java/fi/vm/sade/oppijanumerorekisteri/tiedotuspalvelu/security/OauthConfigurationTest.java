@@ -85,6 +85,11 @@ public class OauthConfigurationTest extends TiedotuspalveluApiTest {
              "todistusKey": "%s/todistus.pdf",
              "idempotencyKey": "%s",
              "kituExamineeDetails": {
+                "katuosoite": "Testikatu 1 F 12",
+                "maa": {
+                  "koodiarvo": "FIN",
+                  "koodistoUri": "maatjavaltiot1"
+                },
                 "todistuskieli": {
                   "koodiarvo": "FI",
                   "koodistoUri": "kieli"

@@ -22,6 +22,11 @@ public class TiedoteDtoMapper {
         .state(Tiedote.STATE_OPPIJAN_VALIDOINTI)
         .todistuskieli(tiedoteDto.kituExamineeDetails().todistuskieli().koodiarvo())
         .todistuskieliKoodistoUri(tiedoteDto.kituExamineeDetails().todistuskieli().koodistoUri())
+        .maakoodi(tiedoteDto.kituExamineeDetails().maa().koodiarvo())
+        .maaKoodistoUri(tiedoteDto.kituExamineeDetails().maa().koodistoUri())
+        .kituKatuosoite(tiedoteDto.kituExamineeDetails().katuosoite())
+        .kituPostinumero(tiedoteDto.kituExamineeDetails().postinumero())
+        .kituPostitoimipaikka(tiedoteDto.kituExamineeDetails().postitoimipaikka())
         .build();
   }
 }

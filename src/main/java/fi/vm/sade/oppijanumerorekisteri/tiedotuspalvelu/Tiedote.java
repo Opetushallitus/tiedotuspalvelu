@@ -82,6 +82,21 @@ public class Tiedote {
   @Column(name = "todistuskieli_koodisto_uri", nullable = true)
   private String todistuskieliKoodistoUri;
 
+  @Column(name = "kitu_katuosoite", nullable = true)
+  private String kituKatuosoite;
+
+  @Column(name = "kitu_postinumero", nullable = true)
+  private String kituPostinumero;
+
+  @Column(name = "kitu_postitoimipaikka", nullable = true)
+  private String kituPostitoimipaikka;
+
+  @Column(nullable = true)
+  private String maakoodi;
+
+  @Column(name = "maa_koodisto_uri", nullable = true)
+  private String maaKoodistoUri;
+
   @OneToOne(
       mappedBy = "tiedote",
       cascade = CascadeType.ALL,

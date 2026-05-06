@@ -84,10 +84,24 @@ public class TiedotuspalveluApiTest {
     return createTiedote(builder -> builder.oppijanumero(oppijanumero));
   }
 
+  protected KituExamineeDetailsDto createKituExamineeDetailsDto(
+      Consumer<KituExamineeDetailsDto.KituExamineeDetailsDtoBuilder> modify) {
+    var builder =
+        KituExamineeDetailsDto.builder()
+            .katuosoite("Testikatu 11 A 5")
+            .maa(new KituKoodiarvoDto("FIN", "maatjavaltiot1"))
+            .todistuskieli(new KituKoodiarvoDto("FI", "kieli"));
+    modify.accept(builder);
+    return builder.build();
+  }
+
+  protected KituExamineeDetailsDto createKituExamineeDetailsDto() {
+    return createKituExamineeDetailsDto(modify -> {});
+  }
+
   protected Tiedote createTiedote(Consumer<TiedoteDto.TiedoteDtoBuilder> requestModifier)
       throws Exception {
-    var kituExamineeDetailsDto =
-        KituExamineeDetailsDto.builder().todistuskieli(new KituKoodiarvoDto("FI", "kieli")).build();
+    var kituExamineeDetailsDto = createKituExamineeDetailsDto();
     var builder =
         TiedoteDto.builder()
             .oppijanumero(OidGenerator.generateHenkiloOid())
