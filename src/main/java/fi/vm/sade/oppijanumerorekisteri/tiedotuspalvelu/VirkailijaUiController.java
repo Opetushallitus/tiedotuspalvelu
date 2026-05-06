@@ -39,6 +39,31 @@ public class VirkailijaUiController {
     return new MeResponse(principal.getUsername());
   }
 
+  @GetMapping("/tiedotteet/summary")
+  @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_RAPORTOINTI')")
+  public TiedoteSummary tiedotteetSummary() {
+    var stateCounts =
+        jdbcTemplate.query(
+            """
+            SELECT s.tiedotestate_id, s.description,
+                   COUNT(t.id) AS count,
+                   COUNT(t.id) FILTER (WHERE t.retry_count > 0) AS retried_count,
+                   COUNT(t.id) FILTER (WHERE t.retry_count >= 3) AS retried_three_or_more
+            FROM tiedotestate s
+            LEFT JOIN tiedote t ON t.tiedotestate_id = s.tiedotestate_id
+            GROUP BY s.tiedotestate_id, s.description
+            ORDER BY s.tiedotestate_id
+            """,
+            (rs, rowNum) ->
+                new StateCount(
+                    rs.getString("tiedotestate_id"),
+                    rs.getString("description"),
+                    rs.getLong("count"),
+                    rs.getLong("retried_count"),
+                    rs.getLong("retried_three_or_more")));
+    return new TiedoteSummary(stateCounts);
+  }
+
   @GetMapping("/tiedotteet/csv")
   @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_RAPORTOINTI')")
   public ResponseEntity<byte[]> tiedotteetCsv() {
@@ -89,4 +114,9 @@ public class VirkailijaUiController {
   }
 
   public record MeResponse(String nimi) {}
+
+  public record TiedoteSummary(List<StateCount> stateCounts) {}
+
+  public record StateCount(
+      String state, String description, long count, long retriedCount, long retriedThreeOrMore) {}
 }

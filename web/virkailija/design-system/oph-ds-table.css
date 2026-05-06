@@ -1,0 +1,41 @@
+.oph-ds-table {
+  --color-valkoinen: #ffffff;
+  --color-gray50: #f6f6f6;
+  --color-light-blue-2: #c1eaff;
+
+  width: 100%;
+}
+
+.oph-ds-table tr,
+.oph-ds-table th {
+  min-height: 56px;
+}
+
+.oph-ds-table.oph-ds-table--compact tr,
+.oph-ds-table.oph-ds-table--compact th {
+  min-height: 40px;
+}
+
+.oph-ds-table thead {
+  font-weight: 700;
+}
+
+.oph-ds-table tbody tr:nth-child(odd) {
+  background-color: var(--color-valkoinen);
+}
+
+.oph-ds-table tbody tr:nth-child(even) {
+  background-color: var(--color-gray50);
+}
+
+.oph-ds-table tbody tr:hover {
+  background-color: var(--color-light-blue-2);
+}
+
+.oph-ds-table td {
+  padding: 8px 10px;
+}
+
+.oph-ds-table.oph-ds-table--compact td {
+  padding: 8px 10px;
+}

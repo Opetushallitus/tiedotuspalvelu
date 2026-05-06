@@ -10,6 +10,18 @@ export type LocalisationDto = {
   value: string;
 };
 
+export type StateCount = {
+  state: string;
+  description: string;
+  count: number;
+  retriedCount: number;
+  retriedThreeOrMore: number;
+};
+
+export type TiedoteSummary = {
+  stateCounts: StateCount[];
+};
+
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "/tiedotuspalvelu/ui" }),
@@ -22,7 +34,14 @@ export const api = createApi({
     getLocalisations: builder.query<LocalisationDto[], void>({
       query: () => "localisations",
     }),
+    getTiedoteSummary: builder.query<TiedoteSummary, void>({
+      query: () => "tiedotteet/summary",
+    }),
   }),
 });
 
-export const { useGetMeQuery, useGetLocalisationsQuery } = api;
+export const {
+  useGetMeQuery,
+  useGetLocalisationsQuery,
+  useGetTiedoteSummaryQuery,
+} = api;
