@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as constructs from "constructs";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -315,6 +316,12 @@ class TiedotuspalveluStack extends cdk.Stack {
       }
       this.fetchLocalisationsAlarm(logGroup, props.alarmTopic);
       this.casClientSessionCleanerAlarm(logGroup, props.alarmTopic);
+
+      new OutgoingRequestMonitoring(this, "OutgoingRequestMonitoring", {
+        logGroup,
+        alarmTopic: props.alarmTopic,
+        clients: ["lokalisointi", "oppijanumerorekisteri", "suomifi-viestit"],
+      });
     }
 
     const dockerImage = new ecr_assets.DockerImageAsset(this, "AppImage", {
@@ -619,6 +626,98 @@ class TiedotuspalveluStack extends cdk.Stack {
       cdk.Duration.hours(2),
       1,
     );
+  }
+}
+
+class OutgoingRequestMonitoring extends constructs.Construct {
+  constructor(
+    scope: constructs.Construct,
+    id: string,
+    props: {
+      logGroup: logs.ILogGroup;
+      alarmTopic: sns.ITopic;
+      clients: string[];
+    },
+  ) {
+    super(scope, id);
+
+    const filters = [
+      {
+        metricName: "OutgoingRequest2XXCount",
+        pattern: logs.FilterPattern.all(
+          logs.FilterPattern.numberValue("$.httpCode", ">=", 200),
+          logs.FilterPattern.numberValue("$.httpCode", "<", 300),
+        ),
+      },
+      {
+        metricName: "OutgoingRequest3XXCount",
+        pattern: logs.FilterPattern.all(
+          logs.FilterPattern.numberValue("$.httpCode", ">=", 300),
+          logs.FilterPattern.numberValue("$.httpCode", "<", 400),
+        ),
+      },
+      {
+        metricName: "OutgoingRequest4XXCount",
+        pattern: logs.FilterPattern.all(
+          logs.FilterPattern.numberValue("$.httpCode", ">=", 400),
+          logs.FilterPattern.numberValue("$.httpCode", "<", 500),
+        ),
+        alarmProps: {
+          comparisonOperator:
+            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+          threshold: 1,
+        },
+      },
+      {
+        metricName: "OutgoingRequest5XXCount",
+        pattern: logs.FilterPattern.numberValue("$.httpCode", ">=", 500),
+        alarmProps: {
+          comparisonOperator:
+            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+          threshold: 1,
+        },
+      },
+      {
+        metricName: "OutgoingRequestNoStatusCount",
+        pattern: logs.FilterPattern.numberValue("$.httpCode", "=", -1),
+        alarmProps: {
+          comparisonOperator:
+            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+          threshold: 1,
+        },
+      },
+    ];
+
+    for (const { metricName, pattern, alarmProps } of filters) {
+      const metricFilter = props.logGroup.addMetricFilter(
+        `${metricName}Filter`,
+        {
+          metricNamespace: "Tiedotuspalvelu/Outgoing",
+          metricName,
+          filterPattern: logs.FilterPattern.all(
+            pattern,
+            logs.FilterPattern.stringValue("$.client", "=", "*"),
+          ),
+          metricValue: "1",
+          dimensions: { Client: "$.client" },
+        },
+      );
+
+      if (alarmProps) {
+        for (const client of props.clients) {
+          metricFilter
+            .metric({
+              dimensionsMap: { Client: client },
+            })
+            .createAlarm(this, `${metricName}Alarm-${client}`, {
+              alarmName: `${metricName}Alarm-${client}`,
+              treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+              evaluationPeriods: 1,
+              ...alarmProps,
+            });
+        }
+      }
+    }
   }
 }
 

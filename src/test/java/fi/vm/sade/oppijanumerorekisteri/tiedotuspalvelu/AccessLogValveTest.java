@@ -56,6 +56,12 @@ public class AccessLogValveTest {
     assertEquals("GET", json.get("requestMethod").asText());
     assertEquals("GET /omat-viestit/actuator/health HTTP/1.1", json.get("request").asText());
     assertEquals("200", json.get("responseCode").asText());
+    assertTrue(
+        json.get("responseTime").isNumber(),
+        "responseTime must be numeric so CloudWatch metric filters can extract it");
+    assertTrue(
+        json.get("response-size").isNumber(),
+        "response-size must be numeric so CloudWatch metric filters can extract it");
     assertEquals(userAgent, json.get("user-agent").asText());
     assertEquals(callerId, json.get("caller-id").asText());
     assertEquals(xForwardedFor, json.get("x-forwarded-for").asText());
