@@ -11,13 +11,10 @@ import java.util.List;
 import java.util.UUID;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-@ExtendWith(OutputCaptureExtension.class)
 public class ApiControllerTest extends TiedotuspalveluApiTest {
 
   private static final String OPPIJANUMERO = OidGenerator.generateHenkiloOid();
@@ -172,7 +169,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   }
 
   @Test
-  public void createTiedoteSucceedsWithOnlyTodistuskieliMaaKatuosoite() throws Exception {
+  public void createTiedoteSucceedsWithOnlyTodistuskieliMaaKatuosoitePostinumeroPostitoimipaikka()
+      throws Exception {
     var body = createBodyWithKituExamineeDetails(validKituExamineeDetailsJson());
     var id = postTiedoteAndReturnId(body);
     var tiedote = tiedoteRepository.findById(id);
@@ -190,6 +188,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
       {
         "katuosoite": "Testikatu 1 A 2",
+        "postinumero": "00100",
+        "postitoimipaikka": "HELSINKI",
         "maa": {
           "koodiarvo": "FIN",
           "koodistoUri": "maatjavaltiot1"
@@ -207,6 +207,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
           {
             "katuosoite": "Testikatu 1 A 2",
+            "postinumero": "00100",
+            "postitoimipaikka": "HELSINKI",
             "maa": {
               "koodiarvo": "FIN",
               "koodistoUri": "maatjavaltiot1"
@@ -224,6 +226,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
     {
       "katuosoite": "Testikatu 1 A 2",
+      "postinumero": "00100",
+      "postitoimipaikka": "HELSINKI",
       "maa": {
         "koodiarvo": "FIN",
         "koodistoUri": "maatjavaltiot1"
@@ -256,6 +260,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
     {
       "katuosoite": "Testikatu 1 A 2",
+      "postinumero": "00100",
+      "postitoimipaikka": "HELSINKI",
       "maa": {
         "koodiarvo": "FIN",
         "koodistoUri": "maatjavaltiot1"
@@ -286,6 +292,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
     {
       %s
+      "postinumero": "00100",
+      "postitoimipaikka": "HELSINKI",
       "maa": {
         "koodiarvo": "FIN",
         "koodistoUri": "maatjavaltiot1"
@@ -317,11 +325,92 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   }
 
   @Test
+  public void createTiedoteFailsWithoutPostinumero() throws Exception {
+    var kituExamineeDetailsJson =
+        """
+        {
+          "katuosoite": "Testikatu 1 A 2",
+          %s
+          "postitoimipaikka": "HELSINKI",
+          "maa": {
+            "koodiarvo": "FIN",
+            "koodistoUri": "maatjavaltiot1"
+          },
+          "todistuskieli": {
+            "koodiarvo": "FI",
+            "koodistoUri": "kieli"
+          }
+        }
+        """;
+
+    var noPostinumeroBody =
+        createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted(""));
+    performAuthorizedPostRequest(noPostinumeroBody).andExpect(status().isBadRequest());
+
+    var nullPostinumeroBody =
+        createBodyWithKituExamineeDetails(
+            kituExamineeDetailsJson.formatted("\"postinumero\": null,"));
+    performAuthorizedPostRequest(nullPostinumeroBody).andExpect(status().isBadRequest());
+
+    var emptyPostinumeroBody =
+        createBodyWithKituExamineeDetails(
+            kituExamineeDetailsJson.formatted("\"postinumero\": \"\","));
+    performAuthorizedPostRequest(emptyPostinumeroBody).andExpect(status().isBadRequest());
+
+    var emptyTrimmablePostinumeroBody =
+        createBodyWithKituExamineeDetails(
+            kituExamineeDetailsJson.formatted("\"postinumero\": \"    \","));
+    performAuthorizedPostRequest(emptyTrimmablePostinumeroBody).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void createTiedoteFailsWithoutPostitoimipaikka() throws Exception {
+    var kituExamineeDetailsJson =
+        """
+            {
+              "katuosoite": "Testikatu 1 A 2",
+              "postinumero": "00100",
+              %s
+              "maa": {
+                "koodiarvo": "FIN",
+                "koodistoUri": "maatjavaltiot1"
+              },
+              "todistuskieli": {
+                "koodiarvo": "FI",
+                "koodistoUri": "kieli"
+              }
+            }
+            """;
+
+    var noPostitoimipaikkaBody =
+        createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted(""));
+    performAuthorizedPostRequest(noPostitoimipaikkaBody).andExpect(status().isBadRequest());
+
+    var nullPostitoimipaikkaBody =
+        createBodyWithKituExamineeDetails(
+            kituExamineeDetailsJson.formatted("\"postitoimipaikka\": null,"));
+    performAuthorizedPostRequest(nullPostitoimipaikkaBody).andExpect(status().isBadRequest());
+
+    var emptyPostitoimipaikkaBody =
+        createBodyWithKituExamineeDetails(
+            kituExamineeDetailsJson.formatted("\"postitoimipaikka\": \"\","));
+    performAuthorizedPostRequest(emptyPostitoimipaikkaBody).andExpect(status().isBadRequest());
+
+    var emptyTrimmablePostitoimipaikkaBody =
+        createBodyWithKituExamineeDetails(
+            kituExamineeDetailsJson.formatted("\"postitoimipaikka\": \"    \","));
+    performAuthorizedPostRequest(emptyTrimmablePostitoimipaikkaBody)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   public void createTiedoteWithNullMaaReturnsBadRequest() throws Exception {
     var kituExamineeDetailsJson =
         """
           {
             "katuosoite": "Testikatu 1 A 2",
+            "postinumero": "00100",
+            "postitoimipaikka": "HELSINKI",
             "maa": null,
             "todistuskieli": {
               "koodiarvo": "FI",
@@ -339,6 +428,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
               {
                 "katuosoite": "Testikatu 1 A 2",
+                "postinumero": "00100",
+                "postitoimipaikka": "HELSINKI",
                 "maa": {},
                 "todistuskieli": {
                   "koodiarvo": "FI",
@@ -356,6 +447,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
         {
           "katuosoite": "Testikatu 1 A 2",
+          "postinumero": "00100",
+          "postitoimipaikka": "HELSINKI",
           "maa": {
             "koodiarvo": %s,
             "koodistoUri": "maatjavaltiot1"
@@ -386,6 +479,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
             {
               "katuosoite": "Testikatu 1 A 2",
+              "postinumero": "00100",
+              "postitoimipaikka": "HELSINKI",
               "maa": {
                 "koodiarvo": "FIN",
                 "koodistoUri": %s
@@ -448,6 +543,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
     return """
             {
               "katuosoite": "Testikatu 11 C 1",
+              "postinumero": "00100",
+              "postitoimipaikka": "HELSINKI",
               "maa": {
                 "koodiarvo": "FIN",
                 "koodistoUri": "maatjavaltiot1"

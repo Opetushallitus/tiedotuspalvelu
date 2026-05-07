@@ -86,6 +86,8 @@ public class OauthConfigurationTest extends TiedotuspalveluApiTest {
              "idempotencyKey": "%s",
              "kituExamineeDetails": {
                 "katuosoite": "Testikatu 1 F 12",
+                "postinumero": "00100",
+                "postitoimipaikka": "HELSINKI",
                 "maa": {
                   "koodiarvo": "FIN",
                   "koodistoUri": "maatjavaltiot1"

@@ -30,6 +30,8 @@ test("Kielitutkintotodistus - Suomi.fi-viestit käytössä", async ({
         etunimet: "Henna Kaarina",
         sukunimi: "Sevillantes",
         katuosoite: "Testikatu e2e A 11 F",
+        postinumero: "00100",
+        postitoimipaikka: "HELSINKI",
         maa: {
           koodiarvo: "FIN",
           koodistoUri: "maatjavaltiot1",

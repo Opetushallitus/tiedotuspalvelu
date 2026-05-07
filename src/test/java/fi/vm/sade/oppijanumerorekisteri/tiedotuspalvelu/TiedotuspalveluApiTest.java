@@ -89,6 +89,8 @@ public class TiedotuspalveluApiTest {
     var builder =
         KituExamineeDetailsDto.builder()
             .katuosoite("Testikatu 11 A 5")
+            .postinumero("00100")
+            .postitoimipaikka("HELSINKI")
             .maa(new KituKoodiarvoDto("FIN", "maatjavaltiot1"))
             .todistuskieli(new KituKoodiarvoDto("FI", "kieli"));
     modify.accept(builder);
