@@ -307,7 +307,7 @@ class TiedotuspalveluStack extends cdk.Stack {
       logGroupName: "Tiedotuspalvelu/tiedotuspalvelu",
       retention: logs.RetentionDays.INFINITE,
     });
-    this.koskiErrorsAlarm(logGroup);
+    this.koskiErrorsAlarm(logGroup, props.alarmTopic);
     this.apiLatencyMetric(logGroup);
 
     if (config.tiedotuspalveluCapacity.max > 0) {
