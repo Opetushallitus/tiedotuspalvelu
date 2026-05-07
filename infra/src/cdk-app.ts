@@ -687,7 +687,10 @@ class TiedotuspalveluStack extends cdk.Stack {
       });
       if (alarmProps) {
         const alarm = metricFilter
-          .metric({ period: cdk.Duration.minutes(5) })
+          .metric({
+            period: cdk.Duration.minutes(5),
+            statistic: "Sum",
+          })
           .createAlarm(this, `${metricName}Alarm`, {
             alarmName: `${metricName}Alarm`,
             treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
@@ -809,6 +812,7 @@ class OutgoingRequestMonitoring extends constructs.Construct {
             .metric({
               dimensionsMap: { Client: client },
               period: cdk.Duration.minutes(5),
+              statistic: "Sum",
             })
             .createAlarm(this, `${metricName}Alarm-${client}`, {
               alarmName: `${metricName}Alarm-${client}`,
