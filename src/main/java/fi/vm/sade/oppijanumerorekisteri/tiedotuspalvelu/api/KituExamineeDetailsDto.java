@@ -11,8 +11,8 @@ public record KituExamineeDetailsDto(
     @Schema(example = "Meikäläinen") String sukunimi,
     @Schema(example = "Matti Matias") String etunimet,
     @Schema(example = "Testikatu 12") @NotBlank String katuosoite,
-    @Schema(example = "00100") String postinumero,
-    @Schema(example = "Helsinki") String postitoimipaikka,
+    @Schema(example = "00100") @NotBlank String postinumero,
+    @Schema(example = "Helsinki") @NotBlank String postitoimipaikka,
     @Valid @NotNull KituKoodiarvoDto maa,
     @Schema(example = "matti.meikalainen@schoolemail.fi") String email,
     @Valid @NotNull KituKoodiarvoDto todistuskieli) {}
