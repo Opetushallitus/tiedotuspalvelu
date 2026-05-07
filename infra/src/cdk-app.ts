@@ -790,7 +790,7 @@ class OutgoingRequestMonitoring extends constructs.Construct {
       const metricFilter = props.logGroup.addMetricFilter(
         `${metricName}Filter`,
         {
-          metricNamespace: "Tiedotuspalvelu/Outgoing",
+          metricNamespace: "Tiedotuspalvelu",
           metricName,
           filterPattern: logs.FilterPattern.all(
             pattern,
