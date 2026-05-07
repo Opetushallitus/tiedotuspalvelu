@@ -307,6 +307,7 @@ class TiedotuspalveluStack extends cdk.Stack {
       retention: logs.RetentionDays.INFINITE,
     });
     this.koskiErrorsAlarm(logGroup);
+    this.apiLatencyMetric(logGroup);
 
     if (config.tiedotuspalveluCapacity.max > 0) {
       if (config.features["tiedotuspalvelu.fetch-oppija.enabled"]) {
@@ -692,6 +693,19 @@ class TiedotuspalveluStack extends cdk.Stack {
         });
       }
     }
+  }
+
+  apiLatencyMetric(logGroup: logs.LogGroup) {
+    logGroup.addMetricFilter("ApiResponseTimeFilter", {
+      metricNamespace: "Tiedotuspalvelu",
+      metricName: "ApiResponseTime",
+      filterPattern: logs.FilterPattern.all(
+        this.isApiEndpoint(),
+        logs.FilterPattern.numberValue("$.responseTime", ">=", 0),
+      ),
+      metricValue: "$.responseTime",
+      dimensions: { requestMapping: "$.requestMapping" },
+    });
   }
 
   isApiEndpoint() {
