@@ -685,12 +685,14 @@ class TiedotuspalveluStack extends cdk.Stack {
         metricValue: "1",
       });
       if (alarmProps) {
-        metricFilter.metric().createAlarm(this, `${metricName}Alarm`, {
-          alarmName: `${metricName}Alarm`,
-          treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-          evaluationPeriods: 1,
-          ...alarmProps,
-        });
+        metricFilter
+          .metric({ period: cdk.Duration.minutes(5) })
+          .createAlarm(this, `${metricName}Alarm`, {
+            alarmName: `${metricName}Alarm`,
+            treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+            evaluationPeriods: 1,
+            ...alarmProps,
+          });
       }
     }
   }
@@ -804,6 +806,7 @@ class OutgoingRequestMonitoring extends constructs.Construct {
           metricFilter
             .metric({
               dimensionsMap: { Client: client },
+              period: cdk.Duration.minutes(5),
             })
             .createAlarm(this, `${metricName}Alarm-${client}`, {
               alarmName: `${metricName}Alarm-${client}`,
