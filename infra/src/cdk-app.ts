@@ -20,6 +20,7 @@ import { getConfig, getEnvironment } from "./config";
 import * as path from "node:path";
 import { createHealthCheckStacks } from "./health-check";
 import * as alarms from "./alarms";
+import { wireAlarmToSnsTopic } from "./alarms";
 import * as constants from "./constants";
 import { ResponseAlarms } from "./response-alarms";
 
@@ -639,7 +640,7 @@ class TiedotuspalveluStack extends cdk.Stack {
     );
   }
 
-  koskiErrorsAlarm(logGroup: logs.LogGroup) {
+  koskiErrorsAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
     const koskiHenkiloOidForAlarms = ssm.StringParameter.valueFromLookup(
       this,
       "koski-henkilo-oid-for-alarms",
@@ -685,7 +686,7 @@ class TiedotuspalveluStack extends cdk.Stack {
         metricValue: "1",
       });
       if (alarmProps) {
-        metricFilter
+        const alarm = metricFilter
           .metric({ period: cdk.Duration.minutes(5) })
           .createAlarm(this, `${metricName}Alarm`, {
             alarmName: `${metricName}Alarm`,
@@ -693,6 +694,7 @@ class TiedotuspalveluStack extends cdk.Stack {
             evaluationPeriods: 1,
             ...alarmProps,
           });
+        wireAlarmToSnsTopic(alarm, alarmTopic);
       }
     }
   }
@@ -803,7 +805,7 @@ class OutgoingRequestMonitoring extends constructs.Construct {
 
       if (alarmProps) {
         for (const client of props.clients) {
-          metricFilter
+          const alarm = metricFilter
             .metric({
               dimensionsMap: { Client: client },
               period: cdk.Duration.minutes(5),
@@ -814,6 +816,7 @@ class OutgoingRequestMonitoring extends constructs.Construct {
               evaluationPeriods: 1,
               ...alarmProps,
             });
+          wireAlarmToSnsTopic(alarm, props.alarmTopic);
         }
       }
     }

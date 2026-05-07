@@ -32,6 +32,13 @@ export function alarmIfExpectedLogLineIsMissing(
     evaluationPeriods,
     treatMissingData: cloudwatch.TreatMissingData.BREACHING,
   });
+  wireAlarmToSnsTopic(alarm, alarmTopic);
+}
+
+export function wireAlarmToSnsTopic(
+  alarm: cloudwatch.Alarm,
+  alarmTopic: sns.ITopic,
+) {
   alarm.addOkAction(new cloudwatch_actions.SnsAction(alarmTopic));
   alarm.addAlarmAction(new cloudwatch_actions.SnsAction(alarmTopic));
 }
