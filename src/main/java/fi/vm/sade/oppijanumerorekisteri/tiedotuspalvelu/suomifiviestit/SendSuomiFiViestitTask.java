@@ -181,6 +181,18 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
   }
 
   private void setPostalInfoFromTiedote(SuomiFiViesti suomiFiViesti, Tiedote tiedote) {
+    if (tiedote.getKituKatuosoite() == null) {
+      throw new IllegalArgumentException("Tiedote kitu katuosoite is null");
+    }
+    if (tiedote.getKituPostinumero() == null) {
+      throw new IllegalArgumentException("Tiedote kitu postinumero is null");
+    }
+    if (tiedote.getKituPostitoimipaikka() == null) {
+      throw new IllegalArgumentException("Tiedote kitu postitoimipaikka is null");
+    }
+    if (tiedote.getMaakoodi() == null) {
+      throw new IllegalArgumentException("Tiedote maakoodi is null");
+    }
     suomiFiViesti.setStreetAddress(tiedote.getKituKatuosoite());
     suomiFiViesti.setZipCode(tiedote.getKituPostinumero());
     suomiFiViesti.setCity(tiedote.getKituPostitoimipaikka());
