@@ -744,86 +744,49 @@ class OutgoingRequestMonitoring extends constructs.Construct {
   ) {
     super(scope, id);
 
-    const filters = [
+    const alarms = [
       {
-        metricName: "OutgoingRequest2XXCount",
-        pattern: logs.FilterPattern.all(
-          logs.FilterPattern.numberValue("$.httpCode", ">=", 200),
-          logs.FilterPattern.numberValue("$.httpCode", "<", 300),
-        ),
+        statusClass: "4XX",
+        name: "4XX",
+        threshold: 1,
       },
       {
-        metricName: "OutgoingRequest3XXCount",
-        pattern: logs.FilterPattern.all(
-          logs.FilterPattern.numberValue("$.httpCode", ">=", 300),
-          logs.FilterPattern.numberValue("$.httpCode", "<", 400),
-        ),
+        statusClass: "5XX",
+        name: "5XX",
+        threshold: 1,
       },
       {
-        metricName: "OutgoingRequest4XXCount",
-        pattern: logs.FilterPattern.all(
-          logs.FilterPattern.numberValue("$.httpCode", ">=", 400),
-          logs.FilterPattern.numberValue("$.httpCode", "<", 500),
-        ),
-        alarmProps: {
-          comparisonOperator:
-            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-          threshold: 1,
-        },
-      },
-      {
-        metricName: "OutgoingRequest5XXCount",
-        pattern: logs.FilterPattern.numberValue("$.httpCode", ">=", 500),
-        alarmProps: {
-          comparisonOperator:
-            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-          threshold: 1,
-        },
-      },
-      {
-        metricName: "OutgoingRequestNoStatusCount",
-        pattern: logs.FilterPattern.numberValue("$.httpCode", "=", -1),
-        alarmProps: {
-          comparisonOperator:
-            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-          threshold: 1,
-        },
+        statusClass: "Other",
+        name: "NoStatus",
+        threshold: 1,
       },
     ];
 
-    for (const { metricName, pattern, alarmProps } of filters) {
-      const metricFilter = props.logGroup.addMetricFilter(
-        `${metricName}Filter`,
-        {
-          metricNamespace: "Tiedotuspalvelu",
-          metricName,
-          filterPattern: logs.FilterPattern.all(
-            pattern,
-            logs.FilterPattern.stringValue("$.client", "=", "*"),
-          ),
-          metricValue: "1",
-          dimensions: { Client: "$.client" },
-        },
-      );
-
-      if (alarmProps) {
-        for (const client of props.clients) {
-          const alarm = metricFilter
-            .metric({
-              dimensionsMap: { Client: client },
-              period: cdk.Duration.minutes(5),
-              statistic: "Sum",
-            })
-            .createAlarm(this, `${metricName}Alarm-${client}`, {
-              alarmName: `${metricName}Alarm-${client}`,
-              treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-              evaluationPeriods: 1,
-              ...alarmProps,
-            });
-          wireAlarmToSnsTopic(alarm, props.alarmTopic);
-        }
-      }
-    }
+    props.clients.forEach((client) => {
+      alarms.forEach(({ statusClass, name, threshold }) => {
+        const alarm = new cloudwatch.Alarm(
+          this,
+          `OutgoingRequest${name}Alarm-${client}`,
+          {
+            alarmName: `OutgoingRequest${name}Alarm-${client}`,
+            evaluationPeriods: 1,
+            threshold,
+            treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+            metric: new cloudwatch.Metric({
+              namespace: "Tiedotuspalvelu",
+              metricName: "latency",
+              statistic: "SampleCount",
+              period: cdk.Duration.minutes(30),
+              dimensionsMap: {
+                client: client,
+                statusClass: statusClass,
+              },
+            }),
+          },
+        );
+        wireAlarmToSnsTopic(alarm, props.alarmTopic);
+      });
+    });
   }
 }
 
