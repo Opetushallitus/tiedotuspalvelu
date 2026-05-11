@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.ResourceReader;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.Tiedote;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedotuspalveluApiTest;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedotuspalveluProperties;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -44,6 +45,7 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
   private static final String SUOMIFI_SYSTEM_ID = UUID.randomUUID().toString();
   private static final String SUOMIFI_TOKEN = UUID.randomUUID().toString();
   private static final String SUOMIFI_MESSAGE_ID = UUID.randomUUID().toString();
+  @Autowired private TiedotuspalveluProperties tiedotuspalveluProperties;
 
   @DynamicPropertySource
   static void registerProperties(DynamicPropertyRegistry registry) {
@@ -530,6 +532,127 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
     createTiedoteAndRunTask(modifyTiedote);
 
     Assertions.assertThat(output).containsPattern(expectedExceptionMessage);
+  }
+
+  @Test
+  public void sendsNonHetuSuomiFiMessagesToCorrectSuomiFiEndpoint(CapturedOutput output)
+      throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/attachments"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"attachmentId\": \"attach-123\"}")));
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"messageId\": \"msg-456\"}")));
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/paper-mail-without-id"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"messageId\": \"msg-456\"}")));
+
+    var tiedote =
+        createTiedoteAndRunTask(
+            t -> {
+              t.setViesti(
+                  getSuomiFiViestiBuilder(t).messageType("paperMail").henkilotunnus(null).build());
+              t.setKielitutkintotodistusPdf(
+                  KielitutkintotodistusPdf.builder()
+                      .tiedote(t)
+                      .content(readBytes("/fakekielitutkintotodistus.pdf"))
+                      .build());
+              t.setState(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA);
+            });
+
+    wireMock.verify(0, postRequestedFor(urlEqualTo("/v2/messages")));
+    wireMock.verify(1, postRequestedFor(urlEqualTo("/v2/attachments")));
+    wireMock.verify(1, postRequestedFor(urlEqualTo("/v2/paper-mail-without-id")));
+    Assertions.assertThat(output)
+        .contains(
+            "Sent Suomi.fi paper mail viesti (without id) for tiedote %s"
+                .formatted(tiedote.getId()));
+    var attachmentsJson = "[{\"attachmentId\": \"attach-123\"}]";
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/v2/paper-mail-without-id"))
+            .withRequestBody(matchingJsonPath("$.externalId", equalTo(tiedote.getId().toString())))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.attachments", equalToJson(attachmentsJson)))
+            .withRequestBody(matchingJsonPath("$.paperMail.colorPrinting", equalTo("true")))
+            .withRequestBody(matchingJsonPath("$.paperMail.createAddressPage", equalTo("true")))
+            .withRequestBody(matchingJsonPath("$.paperMail.messageServiceType", equalTo("Normal")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.city", equalTo("HELSINKI")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.countryCode", equalTo("FI")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.name", equalTo("Katti Purr")))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.paperMail.recipient.address.streetAddress", equalTo("Testikatu 11 A 5")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.zipCode", equalTo("00100")))
+            .withRequestBody(matchingJsonPath("$.paperMail.twoSidedPrinting", equalTo("true")))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.sender.serviceId",
+                    equalTo(tiedotuspalveluProperties.suomifiViestit().senderServiceId()))));
+
+    var updated = tiedoteRepository.findById(tiedote.getId());
+    assertThat(updated.get().getState()).isEqualTo(Tiedote.STATE_TIEDOTE_KÄSITELTY);
+  }
+
+  @Test
+  public void failsToProcessTiedoteIfNonHetuRequestErrors(CapturedOutput output) throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/attachments"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"attachmentId\": \"attach-123\"}")));
+
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/paper-mail-without-id"))
+            .willReturn(
+                aResponse()
+                    .withStatus(409)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(
+                        "{\"reason\": \"The message should be about the external ID already being in use\"}")));
+
+    var tiedote =
+        createTiedoteAndRunTask(
+            t -> {
+              t.setViesti(
+                  getSuomiFiViestiBuilder(t).messageType("paperMail").henkilotunnus(null).build());
+              t.setKielitutkintotodistusPdf(
+                  KielitutkintotodistusPdf.builder()
+                      .tiedote(t)
+                      .content(readBytes("/fakekielitutkintotodistus.pdf"))
+                      .build());
+              t.setState(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA);
+            });
+
+    wireMock.verify(1, postRequestedFor(urlEqualTo("/v2/attachments")));
+    wireMock.verify(1, postRequestedFor(urlEqualTo("/v2/paper-mail-without-id")));
+
+    var updated = tiedoteRepository.findById(tiedote.getId());
+    assertThat(updated.get().getState())
+        .isEqualTo(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA);
+
+    Assertions.assertThat(output)
+        .contains(
+            "java.lang.IllegalStateException: Suomi.fi viestit message call failed with status 409");
   }
 
   private void stubGettingSuomiFiViestitAccessToken() {

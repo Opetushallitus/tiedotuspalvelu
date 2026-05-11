@@ -87,6 +87,34 @@ public class SuomiFiViestitClient {
     }
   }
 
+  public String sendPaperMailWithoutId(PaperMailWithoutIdRequest request) {
+    var token = fetchAccessToken();
+    try {
+      var payload = objectMapper.writeValueAsString(request);
+      var httpRequest =
+          HttpRequest.newBuilder()
+              .uri(URI.create(properties.suomifiViestit().baseUrl() + "/v2/paper-mail-without-id"))
+              .header("Content-Type", CONTENT_TYPE_JSON)
+              .header("Authorization", "Bearer " + token)
+              .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+              .build();
+      var response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+      if (response.statusCode() == 200) {
+        var sendResponse = objectMapper.readValue(response.body(), MultichannelSendResponse.class);
+        return sendResponse.messageId();
+      }
+      throw new IllegalStateException(
+          "Suomi.fi viestit message call failed with status " + response.statusCode());
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Failed to serialize Suomi.fi message request", e);
+    } catch (IOException e) {
+      throw new IllegalStateException("Suomi.fi viestit message call failed with IO error", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Suomi.fi viestit message call interrupted", e);
+    }
+  }
+
   public String sendAttachment(String filename, String contentType, byte[] content) {
     var token = fetchAccessToken();
     try {

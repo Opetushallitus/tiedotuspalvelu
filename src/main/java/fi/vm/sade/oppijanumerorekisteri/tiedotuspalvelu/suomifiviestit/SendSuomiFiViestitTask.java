@@ -100,6 +100,13 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
     var pdfBytes = suomiFiViesti.getTiedote().getKielitutkintotodistusPdf().getContent();
     var attachmentId =
         suomiFiViestitClient.sendAttachment("todistus.pdf", "application/pdf", pdfBytes);
+    if (suomiFiViesti.getHenkilotunnus() == null) {
+      return sendPaperMailWithoutId(suomiFiViesti, attachmentId);
+    }
+    return sendMultichannelMessage(suomiFiViesti, attachmentId);
+  }
+
+  private String sendMultichannelMessage(SuomiFiViesti suomiFiViesti, String attachmentId) {
     var request =
         new MultichannelMessageRequest(
             createElectronicPart(suomiFiViesti),
@@ -108,7 +115,22 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
             createRecipient(suomiFiViesti),
             createSender());
     var messageId = suomiFiViestitClient.sendMultichannelMessage(request);
-    log.info("Sent Suomi.fi paper mail viesti for tiedote {}", suomiFiViesti.getTiedote().getId());
+    log.info(
+        "Sent Suomi.fi paper mail viesti (multichannel) for tiedote {}",
+        suomiFiViesti.getTiedote().getId());
+    return messageId;
+  }
+
+  private String sendPaperMailWithoutId(SuomiFiViesti suomiFiViesti, String attachmentId) {
+    var request =
+        new PaperMailWithoutIdRequest(
+            createExternalId(suomiFiViesti),
+            createPaperMailPart(suomiFiViesti, attachmentId),
+            createSender());
+    var messageId = suomiFiViestitClient.sendPaperMailWithoutId(request);
+    log.info(
+        "Sent Suomi.fi paper mail viesti (without id) for tiedote {}",
+        suomiFiViesti.getTiedote().getId());
     return messageId;
   }
 

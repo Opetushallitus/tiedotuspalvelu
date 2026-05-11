@@ -33,7 +33,7 @@ public class SuomiFiViesti {
   @Column(name = "sisalto", nullable = false)
   private String sisalto;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String henkilotunnus;
 
   @Column(nullable = false)
