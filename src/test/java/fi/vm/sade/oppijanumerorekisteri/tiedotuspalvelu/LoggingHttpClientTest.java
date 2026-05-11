@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER;
+import static fi.vm.sade.RequestIdFilter.REQUEST_ID_ATTRIBUTE;
 import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_ALWAYS;
 import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_NEVER;
 import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_ON_ERROR;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class LoggingHttpClientTest {
 
@@ -331,6 +333,42 @@ public class LoggingHttpClientTest {
       assertTrue(
           json.get(metric.get("Name").asText()).isNumber(),
           "the top level field referenced by Name must be numeric per EMF spec");
+    } finally {
+      logger.detachAppender(listAppender);
+      logger.setLevel(originalLevel);
+    }
+  }
+
+  @Test
+  public void includesRequestIdFromMdc() throws Exception {
+    var objectMapper = new ObjectMapper();
+    var logger = (Logger) LoggerFactory.getLogger(LoggingHttpClient.class);
+    var listAppender = new ListAppender<ILoggingEvent>();
+    listAppender.start();
+    var originalLevel = logger.getLevel();
+    logger.setLevel(Level.INFO);
+    logger.addAppender(listAppender);
+    try {
+      var testPath = "/" + UUID.randomUUID();
+      wireMock.stubFor(get(urlEqualTo(testPath)).willReturn(aResponse().withStatus(200)));
+      var httpClient = new LoggingHttpClient(UUID.randomUUID().toString(), LOG_BODY_NEVER);
+      var request =
+          HttpRequest.newBuilder().uri(URI.create(wireMock.baseUrl() + testPath)).GET().build();
+
+      var requestId = UUID.randomUUID().toString();
+      MDC.put(REQUEST_ID_ATTRIBUTE, requestId);
+      try {
+        httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+      } finally {
+        MDC.remove(REQUEST_ID_ATTRIBUTE);
+      }
+      var json = objectMapper.readTree(singleLogMessage(listAppender));
+      assertEquals(requestId, json.get("requestId").asText());
+
+      listAppender.list.clear();
+      httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+      var jsonWithoutMdc = objectMapper.readTree(singleLogMessage(listAppender));
+      assertNull(jsonWithoutMdc.get("requestId"));
     } finally {
       logger.detachAppender(listAppender);
       logger.setLevel(originalLevel);

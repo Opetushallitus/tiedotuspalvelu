@@ -1,11 +1,21 @@
 <configuration>
-  <include resource="org/springframework/boot/logging/logback/base.xml"/>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
   <appender name="JSON-CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>%msg%n</pattern>
     </encoder>
   </appender>
+
+  <appender name="STDOUT-CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSX, UTC} %X{fi.vm.sade.RequestIdFilter.requestId:--} %X{fi.vm.sade.RequestCallerFilter.callerHenkiloOid:--} %p [%t] %c %m%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT-CONSOLE"/>
+  </root>
 
   <logger
       name="fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient"

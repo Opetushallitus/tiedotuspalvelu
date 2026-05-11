@@ -1,5 +1,6 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 
+import static fi.vm.sade.RequestIdFilter.REQUEST_ID_ATTRIBUTE;
 import static fi.vm.sade.cloudwatch.CloudWatchEMFEntry.FIELD_AWS_METADATA;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 
 @Slf4j
 public class LoggingHttpClient {
@@ -75,6 +77,7 @@ public class LoggingHttpClient {
       var durationMs = Duration.ofNanos(System.nanoTime() - startNanos).toMillis();
       var logEntry =
           OutgoingRequestLog.builder()
+              .requestId(MDC.get(REQUEST_ID_ATTRIBUTE))
               .client(clientName)
               .url(request.uri().toString())
               .httpCode(statusCode)
@@ -99,6 +102,7 @@ public class LoggingHttpClient {
   @Builder
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private record OutgoingRequestLog(
+      String requestId,
       @JsonProperty(FIELD_CLIENT) String client,
       String url,
       int httpCode,

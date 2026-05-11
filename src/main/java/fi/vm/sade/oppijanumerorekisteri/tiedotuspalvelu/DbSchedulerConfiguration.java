@@ -1,9 +1,13 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 
+import static fi.vm.sade.RequestIdFilter.REQUEST_ID_ATTRIBUTE;
+
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
+import com.github.kagkarlsson.scheduler.task.schedule.Schedule;
 import com.github.kagkarlsson.scheduler.task.schedule.Schedules;
 import fi.vm.sade.JdbcSessionMappingStorage;
+import fi.vm.sade.RequestIdFilter;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.koski.FetchKielitutkintotodistusTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.locale.FetchLocalisationsTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.FetchOppijaTask;
@@ -12,6 +16,7 @@ import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SendSuomi
 import java.time.Duration;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,16 +35,19 @@ public class DbSchedulerConfiguration {
   @Bean
   @ConditionalOnProperty(name = "tiedotuspalvelu.fetch-oppija.enabled", havingValue = "true")
   public Task<Void> fetchOppijaTaskBean() {
-    return Tasks.recurring("fetch-oppija-task", Schedules.fixedDelay(Duration.ofSeconds(10)))
-        .execute((inst, ctx) -> fetchOppijaTask.execute());
+    return wrapTaskWithRequestId(
+        "fetch-oppija-task",
+        Schedules.fixedDelay(Duration.ofSeconds(10)),
+        fetchOppijaTask::execute);
   }
 
   @Bean
   @ConditionalOnProperty(name = "tiedotuspalvelu.suomifi-viestit.enabled", havingValue = "true")
   public Task<Void> sendSuomiFiViestitTaskBean() {
-    return Tasks.recurring(
-            "send-suomi-fi-viestit-task", Schedules.fixedDelay(Duration.ofSeconds(10)))
-        .execute((inst, ctx) -> sendSuomiFiViestitTask.execute());
+    return wrapTaskWithRequestId(
+        "send-suomi-fi-viestit-task",
+        Schedules.fixedDelay(Duration.ofSeconds(10)),
+        sendSuomiFiViestitTask::execute);
   }
 
   @Bean
@@ -47,33 +55,52 @@ public class DbSchedulerConfiguration {
       name = "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled",
       havingValue = "true")
   public Task<Void> fetchKielitutkintotodistusTaskBean() {
-    return Tasks.recurring(
-            "fetch-kielitutkintotoistus-task", Schedules.fixedDelay(Duration.ofSeconds(10)))
-        .execute((inst, ctx) -> fetchKielitutkintotodistusTask.execute());
+    return wrapTaskWithRequestId(
+        "fetch-kielitutkintotoistus-task",
+        Schedules.fixedDelay(Duration.ofSeconds(10)),
+        fetchKielitutkintotodistusTask::execute);
   }
 
   @Bean
   @ConditionalOnProperty(name = "tiedotuspalvelu.suomifi-viestit.enabled", havingValue = "true")
   public Task<Void> fetchSuomiFiEventsTaskBean() {
-    return Tasks.recurring(
-            "fetch-suomi-fi-viestit-events-task", Schedules.fixedDelay(Duration.ofMinutes(1)))
-        .execute((inst, ctx) -> fetchSuomiFiViestitEventsTask.execute());
+    return wrapTaskWithRequestId(
+        "fetch-suomi-fi-viestit-events-task",
+        Schedules.fixedDelay(Duration.ofMinutes(1)),
+        fetchSuomiFiViestitEventsTask::execute);
   }
 
   @Bean
   @ConditionalOnProperty(name = "tiedotuspalvelu.fetch-localisations.enabled", havingValue = "true")
   public Task<Void> fetchLocalisationsTaskBean() {
-    return Tasks.recurring("fetch-localisations-task", Schedules.fixedDelay(Duration.ofMinutes(5)))
-        .execute((inst, ctx) -> fetchLocalisationsTask.execute());
+    return wrapTaskWithRequestId(
+        "fetch-localisations-task",
+        Schedules.fixedDelay(Duration.ofMinutes(5)),
+        fetchLocalisationsTask::execute);
   }
 
   @Bean
   public Task<Void> casClientSessionCleanerTaskBean() {
-    return Tasks.recurring("cas-client-session-cleaner", Schedules.fixedDelay(Duration.ofHours(1)))
+    return wrapTaskWithRequestId(
+        "cas-client-session-cleaner",
+        Schedules.fixedDelay(Duration.ofHours(1)),
+        () -> {
+          jdbcSessionMappingStorage.clean();
+          log.info("Finished running CasClientSessionCleanerTask");
+        });
+  }
+
+  private Task<Void> wrapTaskWithRequestId(String name, Schedule schedule, Runnable action) {
+    return Tasks.recurring(name, schedule)
         .execute(
             (inst, ctx) -> {
-              jdbcSessionMappingStorage.clean();
-              log.info("Finished running CasClientSessionCleanerTask");
+              try {
+                var requestId = RequestIdFilter.generateRequestId();
+                MDC.put(REQUEST_ID_ATTRIBUTE, requestId);
+                action.run();
+              } finally {
+                MDC.remove(REQUEST_ID_ATTRIBUTE);
+              }
             });
   }
 }
