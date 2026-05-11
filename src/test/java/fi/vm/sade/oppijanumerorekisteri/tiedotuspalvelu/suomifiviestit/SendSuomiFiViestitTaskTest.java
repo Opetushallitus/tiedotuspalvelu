@@ -12,15 +12,25 @@ import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedotuspalveluApiTest;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
+@ExtendWith(OutputCaptureExtension.class)
 public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implements ResourceReader {
 
   @Autowired private SendSuomiFiViestitTask sendSuomiFiViestitTask;
@@ -211,6 +221,28 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
     assertNotNull(updatedTiedote.getViesti().getProcessedAt());
     assertEquals("msg-456", updatedTiedote.getViesti().getMessageId());
     assertEquals(0, updatedTiedote.getRetryCount());
+
+    wireMock.verify(postRequestedFor(urlEqualTo("/v2/attachments")));
+    wireMock.verify(postRequestedFor(urlEqualTo("/v2/messages")));
+    var attachmentsJson = "[{\"attachmentId\":\"attach-123\"}]";
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/v2/messages"))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.attachments", equalToJson(attachmentsJson)))
+            .withRequestBody(matchingJsonPath("$.paperMail.colorPrinting", equalTo("true")))
+            .withRequestBody(matchingJsonPath("$.paperMail.createAddressPage", equalTo("true")))
+            .withRequestBody(matchingJsonPath("$.paperMail.messageServiceType", equalTo("Normal")))
+            .withRequestBody(matchingJsonPath("$.paperMail.twoSidedPrinting", equalTo("true")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.printingAndEnvelopingService.costPool", absent()))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.paperMail.printingAndEnvelopingService.postiMessaging.username",
+                    equalTo("posti-username")))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.paperMail.printingAndEnvelopingService.postiMessaging.password",
+                    equalTo("posti-password"))));
   }
 
   @Test
@@ -283,6 +315,221 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
                 matchingJsonPath("$.electronic.title", equalTo("(FI) tiedote viesti otsikko")))
             .withRequestBody(
                 matchingJsonPath("$.electronic.body", equalTo("(FI) tiedote viesti sisältö"))));
+  }
+
+  @Test
+  public void setsKituDerivedPostalInformationToSuomiFiViestiWhenProcessingElectronicMessages()
+      throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages/electronic"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody("{\"messageId\": \"%s\"}".formatted(SUOMIFI_MESSAGE_ID))));
+
+    var kituPostalInfoElectronicTiedote =
+        createTiedoteAndRunTask(
+            t -> {
+              t.getViesti().setMessageType("electronic");
+              t.setMaakoodi("FRA");
+              t.setKituKatuosoite("Not a real french street address 1 A 2");
+              t.setKituPostinumero("75008");
+              t.setKituPostitoimipaikka("PARIS");
+            });
+    assertThat(kituPostalInfoElectronicTiedote.getViesti().getCountryCode()).isEqualTo("FR");
+    assertThat(kituPostalInfoElectronicTiedote.getViesti().getStreetAddress())
+        .isEqualTo("Not a real french street address 1 A 2");
+    assertThat(kituPostalInfoElectronicTiedote.getViesti().getZipCode()).isEqualTo("75008");
+    assertThat(kituPostalInfoElectronicTiedote.getViesti().getCity()).isEqualTo("PARIS");
+  }
+
+  @Test
+  public void usesKituDerivedPostalInformationWhenProcessingPaperMail() throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/attachments"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"attachmentId\": \"attach-123\"}")));
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"messageId\": \"msg-456\"}")));
+
+    var kituPostalInfoPaperMailTiedote =
+        createTiedoteAndRunTask(
+            t -> {
+              // State related attributes
+              t.setState(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA);
+              t.getViesti().setMessageType("paperMail");
+              // Postal information
+              t.setMaakoodi("FRA");
+              t.setKituKatuosoite("Not a real french street address 1 A 2");
+              t.setKituPostinumero("75008");
+              t.setKituPostitoimipaikka("PARIS");
+              // Attachment
+              t.setTodistusBucketName("bucketName");
+              t.setTodistusObjectKey("objectKey");
+              t.setKielitutkintotodistusPdf(
+                  KielitutkintotodistusPdf.builder()
+                      .tiedote(t)
+                      .content(readBytes("/fakekielitutkintotodistus.pdf"))
+                      .build());
+            });
+    assertThat(kituPostalInfoPaperMailTiedote.getViesti().getMessageType()).isEqualTo("paperMail");
+    assertThat(kituPostalInfoPaperMailTiedote.getViesti().getCountryCode()).isEqualTo("FR");
+    assertThat(kituPostalInfoPaperMailTiedote.getViesti().getStreetAddress())
+        .isEqualTo("Not a real french street address 1 A 2");
+    assertThat(kituPostalInfoPaperMailTiedote.getViesti().getZipCode()).isEqualTo("75008");
+    assertThat(kituPostalInfoPaperMailTiedote.getViesti().getCity()).isEqualTo("PARIS");
+
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/v2/messages"))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.name", equalTo("Katti Purr")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.city", equalTo("PARIS")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.countryCode", equalTo("FR")))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.paperMail.recipient.address.streetAddress",
+                    equalTo("Not a real french street address 1 A 2")))
+            .withRequestBody(
+                matchingJsonPath("$.paperMail.recipient.address.zipCode", equalTo("75008"))));
+  }
+
+  @Test
+  public void processingElectronicMessageFailsIfTiedoteIsMissingKituPostalInformation(
+      CapturedOutput output) throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages/electronic"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody("{\"messageId\": \"%s\"}".formatted(SUOMIFI_MESSAGE_ID))));
+
+    var tiedoteWithMissingPostalInfo =
+        createTiedoteAndRunTask(
+            t -> {
+              t.setMaakoodi(null);
+              t.setKituKatuosoite("not missing address 1 a 2");
+              t.setKituPostinumero(null);
+              t.setKituPostitoimipaikka("NIL");
+            });
+
+    // Throws and logs an error if data is missing
+    Assertions.assertThat(output)
+        .containsPattern("java.lang.IllegalArgumentException: Tiedote kitu postinumero is null");
+    // Should not send requests to Suomi.fi
+    wireMock.verify(0, postRequestedFor(urlEqualTo("/v2/messages/electronic")));
+    // Should not update Tiedote.viesti, the values should be what they were before
+    var updated = tiedoteRepository.findById(tiedoteWithMissingPostalInfo.getId());
+    assertThat(updated.get().getViesti().getCountryCode()).isEqualTo("FI");
+    assertThat(updated.get().getViesti().getStreetAddress()).isEqualTo("Kissatie 2");
+    assertThat(updated.get().getViesti().getZipCode()).isEqualTo("00200");
+    assertThat(updated.get().getViesti().getCity()).isEqualTo("Espoo");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS,
+        Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA
+      })
+  public void processingPaperMailMessageFailsIfKituPostalInformationFieldsAreMissing(
+      String state, CapturedOutput output) throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/attachments"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"attachmentId\": \"attach-123\"}")));
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"messageId\": \"msg-456\"}")));
+
+    var tiedoteWithMissingPostalInfo =
+        createTiedoteAndRunTask(
+            t -> {
+              t.setViesti(getSuomiFiViestiBuilder(t).messageType("paperMail").build());
+              t.setKielitutkintotodistusPdf(
+                  KielitutkintotodistusPdf.builder()
+                      .tiedote(t)
+                      .content(readBytes("/fakekielitutkintotodistus.pdf"))
+                      .build());
+              t.setState(state);
+              t.setMaakoodi(null);
+              t.setKituKatuosoite("not missing address 1 a 2");
+              t.setKituPostinumero("00100");
+              t.setKituPostitoimipaikka("NIL");
+            });
+
+    Assertions.assertThat(output)
+        .containsPattern("java.lang.IllegalArgumentException: Tiedote maakoodi is null");
+    wireMock.verify(0, postRequestedFor(urlEqualTo("/v2/messages")));
+    wireMock.verify(0, postRequestedFor(urlEqualTo("/v2/attachments")));
+    var updated = tiedoteRepository.findById(tiedoteWithMissingPostalInfo.getId());
+    assertThat(updated.get().getViesti().getCountryCode()).isEqualTo("FI");
+    assertThat(updated.get().getViesti().getStreetAddress()).isEqualTo("Kissatie 2");
+    assertThat(updated.get().getViesti().getZipCode()).isEqualTo("00200");
+    assertThat(updated.get().getViesti().getCity()).isEqualTo("Espoo");
+  }
+
+  private static Stream<Arguments> provideMissingKituPostalInfoFields() {
+    Consumer<Tiedote> katuosoiteMissing =
+        t -> {
+          t.setKituKatuosoite(null);
+        };
+    Consumer<Tiedote> postinumeroMissing =
+        t -> {
+          t.setKituPostinumero(null);
+        };
+    Consumer<Tiedote> postitoimipaikkaMissing =
+        t -> {
+          t.setKituPostitoimipaikka(null);
+        };
+    Consumer<Tiedote> maakoodiMissing =
+        t -> {
+          t.setMaakoodi(null);
+        };
+
+    return Stream.of(
+        Arguments.of(
+            katuosoiteMissing,
+            "java.lang.IllegalArgumentException: Tiedote kitu katuosoite is null"),
+        Arguments.of(
+            postinumeroMissing,
+            "java.lang.IllegalArgumentException: Tiedote kitu postinumero is null"),
+        Arguments.of(
+            postitoimipaikkaMissing,
+            "java.lang.IllegalArgumentException: Tiedote kitu postitoimipaikka is null"),
+        Arguments.of(
+            maakoodiMissing, "java.lang.IllegalArgumentException: Tiedote maakoodi is null"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideMissingKituPostalInfoFields")
+  public void throwsAndLogsErrorIfKituPostalInformationFieldsAreMissing(
+      Consumer<Tiedote> modifyTiedote, String expectedExceptionMessage, CapturedOutput output)
+      throws Exception {
+    createTiedoteAndRunTask(modifyTiedote);
+
+    Assertions.assertThat(output).containsPattern(expectedExceptionMessage);
   }
 
   private void stubGettingSuomiFiViestitAccessToken() {
