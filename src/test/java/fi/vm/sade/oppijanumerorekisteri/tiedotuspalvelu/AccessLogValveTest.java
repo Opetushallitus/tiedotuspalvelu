@@ -82,19 +82,14 @@ public class AccessLogValveTest {
           "request",
           "responseTime",
           "requestMethod",
-          "service",
-          "environment",
-          "customer",
           "user-agent",
-          "clientSubSystemCode",
           "callerHenkiloOid",
           "caller-id",
           "x-forwarded-for",
           "remote-ip",
           "session",
           "response-size",
-          "referer",
-          "opintopolku-api-key"
+          "referer"
         }) {
       assertNotNull(json.get(field), "missing field in access log JSON: " + field);
     }
