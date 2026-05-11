@@ -50,7 +50,6 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
             "OMAT_VIESTIT_SUOMIFI_VIESTI", "omat-viestit", tiedote.getTodistuskieliElseDefault());
     viesti.setOtsikko(otsikko);
     viesti.setSisalto(sisalto);
-    setPostalInfoFromTiedote(viesti, tiedote);
     var messageId = sendSuomiFiViesti(viesti);
     viesti.setMessageId(messageId);
     viesti.setProcessedAt(OffsetDateTime.now());
@@ -200,24 +199,5 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
                 senderAddress.countryCode(),
                 null)),
         true);
-  }
-
-  private void setPostalInfoFromTiedote(SuomiFiViesti suomiFiViesti, Tiedote tiedote) {
-    if (tiedote.getKituKatuosoite() == null) {
-      throw new IllegalArgumentException("Tiedote kitu katuosoite is null");
-    }
-    if (tiedote.getKituPostinumero() == null) {
-      throw new IllegalArgumentException("Tiedote kitu postinumero is null");
-    }
-    if (tiedote.getKituPostitoimipaikka() == null) {
-      throw new IllegalArgumentException("Tiedote kitu postitoimipaikka is null");
-    }
-    if (tiedote.getMaakoodi() == null) {
-      throw new IllegalArgumentException("Tiedote maakoodi is null");
-    }
-    suomiFiViesti.setStreetAddress(tiedote.getKituKatuosoite());
-    suomiFiViesti.setZipCode(tiedote.getKituPostinumero());
-    suomiFiViesti.setCity(tiedote.getKituPostitoimipaikka());
-    suomiFiViesti.setCountryCode(CountryCodeConverter.alpha3ToAlpha2(tiedote.getMaakoodi()));
   }
 }
