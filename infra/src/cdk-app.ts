@@ -692,7 +692,7 @@ class TiedotuspalveluStack extends cdk.Stack {
             statistic: "Sum",
           })
           .createAlarm(this, `${metricName}Alarm`, {
-            alarmName: `${metricName}Alarm`,
+            alarmName: `Tiedotuspalvelu${metricName}Alarm`,
             treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
             evaluationPeriods: 1,
             ...alarmProps,
@@ -768,7 +768,7 @@ class OutgoingRequestMonitoring extends constructs.Construct {
           this,
           `OutgoingRequest${name}Alarm-${client}`,
           {
-            alarmName: `OutgoingRequest${name}Alarm-${client}`,
+            alarmName: `TiedotuspalveluOutgoingRequest${name}Alarm-${client}`,
             evaluationPeriods: 1,
             threshold,
             treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
