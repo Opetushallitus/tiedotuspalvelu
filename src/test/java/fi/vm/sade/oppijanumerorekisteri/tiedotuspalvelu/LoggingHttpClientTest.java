@@ -78,7 +78,7 @@ public class LoggingHttpClientTest {
                   assertEquals(testClientName, json.get("client").asText());
                   assertEquals(wireMock.baseUrl() + testPath, json.get("url").asText());
                   assertEquals(statusCode, json.get("httpCode").asInt());
-                  assertTrue(json.get("duration").asLong() >= 0);
+                  assertTrue(json.get("latency").asLong() >= 0);
                   assertNotNull(Instant.parse(json.get("timestamp").asText()));
                   assertNull(json.get("body"));
                 } catch (Exception e) {
@@ -254,6 +254,83 @@ public class LoggingHttpClientTest {
       var message = singleLogMessage(listAppender);
       var json = objectMapper.readTree(message);
       assertEquals(-1, json.get("httpCode").asInt());
+    } finally {
+      logger.detachAppender(listAppender);
+      logger.setLevel(originalLevel);
+    }
+  }
+
+  @Test
+  public void awsMetadataObjectFollowsEmfSpec() throws Exception {
+    // https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html
+    var objectMapper = new ObjectMapper();
+    var logger = (Logger) LoggerFactory.getLogger(LoggingHttpClient.class);
+    var listAppender = new ListAppender<ILoggingEvent>();
+    listAppender.start();
+    var originalLevel = logger.getLevel();
+    logger.setLevel(Level.INFO);
+    logger.addAppender(listAppender);
+
+    try {
+      var testPath = "/" + UUID.randomUUID();
+      wireMock.stubFor(get(urlEqualTo(testPath)).willReturn(aResponse().withStatus(200)));
+
+      var httpClient = new LoggingHttpClient(UUID.randomUUID().toString(), LOG_BODY_NEVER);
+      var request =
+          HttpRequest.newBuilder().uri(URI.create(wireMock.baseUrl() + testPath)).GET().build();
+
+      httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+
+      var json = objectMapper.readTree(singleLogMessage(listAppender));
+      var aws = json.get("_aws");
+      assertNotNull(aws, "_aws metadata object must be present");
+
+      var timestamp = aws.get("Timestamp");
+      assertNotNull(timestamp, "_aws.Timestamp must be present");
+      assertTrue(timestamp.isNumber(), "_aws.Timestamp must be numeric (epoch millis)");
+      assertEquals(
+          Instant.parse(json.get("timestamp").asText()).toEpochMilli(),
+          timestamp.asLong(),
+          "_aws.Timestamp must equal the entry's timestamp in epoch millis");
+
+      var directives = aws.get("CloudWatchMetrics");
+      assertNotNull(directives, "_aws.CloudWatchMetrics must be present");
+      assertTrue(directives.isArray(), "_aws.CloudWatchMetrics must be an array");
+      assertEquals(1, directives.size(), "_aws.CloudWatchMetrics contains one metric directive");
+      var directive = directives.get(0);
+      assertEquals("Tiedotuspalvelu", directive.get("Namespace").asText(), "Namespace must match");
+
+      var dimensions = directive.get("Dimensions");
+      assertNotNull(dimensions, "Dimensions must be present");
+      assertTrue(dimensions.isArray(), "Dimensions must be an array of arrays");
+      for (var dimensionSet : dimensions) {
+        assertTrue(dimensionSet.isArray(), "each Dimensions entry must itself be an array");
+        for (var dimensionKey : dimensionSet) {
+          assertTrue(dimensionKey.isTextual(), "dimension key must be a string per EMF spec");
+          var key = dimensionKey.asText();
+          var topLevelValue = json.get(key);
+          assertNotNull(
+              topLevelValue,
+              "dimension '" + key + "' must exist as a top-level field per EMF spec");
+          assertTrue(
+              topLevelValue.isTextual(),
+              "dimension '" + key + "' top-level value must be a string per EMF spec");
+        }
+      }
+
+      var metrics = directive.get("Metrics");
+      assertNotNull(metrics, "Metrics must be present");
+      assertTrue(metrics.isArray(), "Metrics must be an array");
+      assertEquals(1, metrics.size(), "produces one metric");
+      var metric = metrics.get(0);
+      assertNotNull(metric.get("Name"), "metric Name must be present");
+      assertTrue(metric.get("Name").isTextual(), "metric Name must be a string");
+      assertNotNull(
+          json.get(metric.get("Name").asText()),
+          "metric Name should reference a top level field per EMF spec");
+      assertTrue(
+          json.get(metric.get("Name").asText()).isNumber(),
+          "the top level field referenced by Name must be numeric per EMF spec");
     } finally {
       logger.detachAppender(listAppender);
       logger.setLevel(originalLevel);
