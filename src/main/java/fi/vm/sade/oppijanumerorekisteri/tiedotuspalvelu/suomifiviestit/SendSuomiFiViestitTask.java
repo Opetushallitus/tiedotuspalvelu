@@ -39,6 +39,12 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
         Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA);
   }
 
+  private void setMessageTypeIfHetuExists(SuomiFiViesti viesti) {
+    if (viesti.getHenkilotunnus() == null) {
+      viesti.setMessageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
+    }
+  }
+
   @Override
   protected void processTiedote(Tiedote tiedote) {
     var viesti = tiedote.getViesti();
@@ -50,6 +56,7 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
             "OMAT_VIESTIT_SUOMIFI_VIESTI", "omat-viestit", tiedote.getTodistuskieliElseDefault());
     viesti.setOtsikko(otsikko);
     viesti.setSisalto(sisalto);
+    setMessageTypeIfHetuExists(viesti);
     var messageId = sendSuomiFiViesti(viesti);
     viesti.setMessageId(messageId);
     viesti.setProcessedAt(OffsetDateTime.now());
@@ -66,7 +73,7 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
             tiedote.setState(Tiedote.STATE_KIELITUTKINTOTODISTUKSEN_NOUTO);
             tiedote.setRetryCount(0);
             tiedote.setNextRetry(null);
-            viesti.setMessageType("paperMail");
+            viesti.setMessageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
             tiedoteRepository.save(tiedote);
           });
       return;

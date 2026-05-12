@@ -19,6 +19,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SuomiFiViesti {
 
+  public static String SUOMI_FI_VIESTI_MESSAGE_TYPE_ELECTRONIC = "electronic";
+  public static String SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL = "paperMail";
+
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private UUID id;

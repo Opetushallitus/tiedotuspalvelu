@@ -175,7 +175,9 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
     sendSuomiFiViestitTask.execute();
 
     var updatedTiedote = tiedoteRepository.findById(tiedote.getId()).orElseThrow();
-    assertEquals("paperMail", updatedTiedote.getViesti().getMessageType());
+    assertEquals(
+        SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL,
+        updatedTiedote.getViesti().getMessageType());
     assertNull(updatedTiedote.getViesti().getProcessedAt());
     assertNull(updatedTiedote.getNextRetry());
     assertEquals(0, updatedTiedote.getRetryCount());
@@ -212,14 +214,16 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
                       .content(readBytes("/fakekielitutkintotodistus.pdf"))
                       .build());
               t.getViesti().setName("Testi Testaaja Testiläinen");
-              t.getViesti().setMessageType("paperMail");
+              t.getViesti().setMessageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
               t.getViesti().setStreetAddress("not a real french address");
               t.getViesti().setZipCode("75008");
               t.getViesti().setCity("PARIS");
               t.getViesti().setCountryCode("FR");
             });
 
-    assertEquals("paperMail", updatedTiedote.getViesti().getMessageType());
+    assertEquals(
+        SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL,
+        updatedTiedote.getViesti().getMessageType());
     assertNotNull(updatedTiedote.getViesti().getProcessedAt());
     assertEquals("msg-456", updatedTiedote.getViesti().getMessageId());
     assertEquals(0, updatedTiedote.getRetryCount());
@@ -362,7 +366,10 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
         createTiedoteAndRunTask(
             t -> {
               t.setViesti(
-                  getSuomiFiViestiBuilder(t).messageType("paperMail").henkilotunnus(null).build());
+                  getSuomiFiViestiBuilder(t)
+                      .messageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL)
+                      .henkilotunnus(null)
+                      .build());
               t.setKielitutkintotodistusPdf(
                   KielitutkintotodistusPdf.builder()
                       .tiedote(t)
@@ -409,6 +416,46 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
   }
 
   @Test
+  public void setsSuomiFiViestiMessageTypeToPaperMailIfHetuIsMissing() throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/attachments"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"attachmentId\": \"attach-123\"}")));
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/paper-mail-without-id"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"messageId\": \"msg-456\"}")));
+
+    var tiedote =
+        createTiedoteAndRunTask(
+            t -> {
+              t.setViesti(
+                  getSuomiFiViestiBuilder(t)
+                      .messageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_ELECTRONIC)
+                      .henkilotunnus(null)
+                      .build());
+              t.setKielitutkintotodistusPdf(
+                  KielitutkintotodistusPdf.builder()
+                      .tiedote(t)
+                      .content(readBytes("/fakekielitutkintotodistus.pdf"))
+                      .build());
+              t.setState(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
+            });
+
+    var after = tiedoteRepository.findById(tiedote.getId());
+    assertThat(after.get().getViesti().getMessageType())
+        .isEqualTo(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
+    wireMock.verify(1, postRequestedFor(urlEqualTo("/v2/paper-mail-without-id")));
+  }
+
+  @Test
   public void failsToProcessTiedoteIfNonHetuRequestErrors(CapturedOutput output) throws Exception {
     stubGettingSuomiFiViestitAccessToken();
     wireMock.stubFor(
@@ -432,7 +479,10 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
         createTiedoteAndRunTask(
             t -> {
               t.setViesti(
-                  getSuomiFiViestiBuilder(t).messageType("paperMail").henkilotunnus(null).build());
+                  getSuomiFiViestiBuilder(t)
+                      .messageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL)
+                      .henkilotunnus(null)
+                      .build());
               t.setKielitutkintotodistusPdf(
                   KielitutkintotodistusPdf.builder()
                       .tiedote(t)
@@ -474,6 +524,6 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
         .zipCode("00200")
         .city("Espoo")
         .countryCode("FI")
-        .messageType("electronic");
+        .messageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_ELECTRONIC);
   }
 }

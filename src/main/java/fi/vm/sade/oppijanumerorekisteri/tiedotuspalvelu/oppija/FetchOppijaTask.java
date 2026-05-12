@@ -42,7 +42,7 @@ public class FetchOppijaTask extends TiedoteProcessingTask {
             .tiedote(tiedote)
             .henkilotunnus(oppija.hetu())
             .name(oppija.etunimet() + " " + oppija.sukunimi())
-            .messageType("electronic");
+            .messageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_ELECTRONIC);
     setPostalInfoFromTiedote(suomiFiViestiBuilder, tiedote);
     return suomiFiViestiBuilder.build();
   }
