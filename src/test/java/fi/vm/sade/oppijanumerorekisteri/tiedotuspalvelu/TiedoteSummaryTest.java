@@ -29,9 +29,9 @@ public class TiedoteSummaryTest extends TiedotuspalveluApiTest {
 
   @Test
   void summaryEndpointReturnsPerStateRetryCounts() throws Exception {
-    insertTiedote(Tiedote.STATE_OPPIJAN_VALIDOINTI, 0);
-    insertTiedote(Tiedote.STATE_OPPIJAN_VALIDOINTI, 1);
-    insertTiedote(Tiedote.STATE_OPPIJAN_VALIDOINTI, 4);
+    insertTiedote(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI, 0);
+    insertTiedote(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI, 1);
+    insertTiedote(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI, 4);
     insertTiedote(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS, 3);
     insertTiedote(Tiedote.STATE_TIEDOTE_KÄSITELTY, 5);
 
@@ -53,7 +53,7 @@ public class TiedoteSummaryTest extends TiedotuspalveluApiTest {
 
     assertEquals(5, summary.stateCounts().size());
 
-    var validointi = byState.get(Tiedote.STATE_OPPIJAN_VALIDOINTI);
+    var validointi = byState.get(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI);
     assertEquals(3L, validointi.count());
     assertEquals(2L, validointi.retriedCount());
     assertEquals(1L, validointi.retriedThreeOrMore());

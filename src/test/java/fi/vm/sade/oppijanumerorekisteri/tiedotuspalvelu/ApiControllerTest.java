@@ -61,8 +61,8 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(returnedId.toString()))
         .andExpect(jsonPath("$.opiskeluoikeusOid").value(OPISKELUOIKEUS_OID))
-        .andExpect(jsonPath("$.meta.type").value("KIELITUTKINTOTODISTUS"))
-        .andExpect(jsonPath("$.meta.state").value("OPPIJAN_VALIDOINTI"))
+        .andExpect(jsonPath("$.meta.type").value(Tiedote.TYPE_KIELITUTKINTOTODISTUS))
+        .andExpect(jsonPath("$.meta.state").value(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI))
         .andExpect(jsonPath("$.statuses[0].status").value("CREATED"))
         .andExpect(jsonPath("$.statuses[0].timestamp").exists());
   }
