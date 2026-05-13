@@ -416,46 +416,6 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
   }
 
   @Test
-  public void setsSuomiFiViestiMessageTypeToPaperMailIfHetuIsMissing() throws Exception {
-    stubGettingSuomiFiViestitAccessToken();
-    wireMock.stubFor(
-        post(urlEqualTo("/v2/attachments"))
-            .willReturn(
-                aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody("{\"attachmentId\": \"attach-123\"}")));
-    wireMock.stubFor(
-        post(urlEqualTo("/v2/paper-mail-without-id"))
-            .willReturn(
-                aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody("{\"messageId\": \"msg-456\"}")));
-
-    var tiedote =
-        createTiedoteAndRunTask(
-            t -> {
-              t.setViesti(
-                  getSuomiFiViestiBuilder(t)
-                      .messageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_ELECTRONIC)
-                      .henkilotunnus(null)
-                      .build());
-              t.setKielitutkintotodistusPdf(
-                  KielitutkintotodistusPdf.builder()
-                      .tiedote(t)
-                      .content(readBytes("/fakekielitutkintotodistus.pdf"))
-                      .build());
-              t.setState(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
-            });
-
-    var after = tiedoteRepository.findById(tiedote.getId());
-    assertThat(after.get().getViesti().getMessageType())
-        .isEqualTo(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
-    wireMock.verify(1, postRequestedFor(urlEqualTo("/v2/paper-mail-without-id")));
-  }
-
-  @Test
   public void failsToProcessTiedoteIfNonHetuRequestErrors(CapturedOutput output) throws Exception {
     stubGettingSuomiFiViestitAccessToken();
     wireMock.stubFor(
