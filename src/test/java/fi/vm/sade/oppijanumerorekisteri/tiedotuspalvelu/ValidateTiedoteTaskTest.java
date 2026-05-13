@@ -17,7 +17,8 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.SignedJWT;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituExamineeDetailsDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituKoodiarvoDto;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.FetchOppijaTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SuomiFiViesti;
 import java.net.URL;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -40,9 +41,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 @ExtendWith(OutputCaptureExtension.class)
-public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements ResourceReader {
+public class ValidateTiedoteTaskTest extends TiedotuspalveluApiTest implements ResourceReader {
 
-  @Autowired private FetchOppijaTask fetchOppijaTask;
+  @Autowired private ValidateTiedoteTask validateTiedoteTask;
 
   @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
   private String jwksUri;
@@ -77,7 +78,7 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
     pastTiedote.setRetryCount(1);
     tiedoteRepository.save(pastTiedote);
 
-    fetchOppijaTask.execute();
+    validateTiedoteTask.execute();
 
     var futureTiedoteUpdated = tiedoteRepository.findById(futureTiedote.getId()).orElseThrow();
     assertNull(futureTiedoteUpdated.getProcessedAt());
@@ -93,9 +94,9 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
         "/henkilo/.*", readResource("/henkilo/" + OPPIJANUMERO_HELLIN_SEVILLANTES + ".json"));
 
     var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
-    assertEquals(Tiedote.STATE_OPPIJAN_VALIDOINTI, tiedote.getState());
+    assertEquals(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI, tiedote.getState());
 
-    fetchOppijaTask.execute();
+    validateTiedoteTask.execute();
 
     var updated = tiedoteRepository.findById(tiedote.getId()).orElseThrow();
     assertEquals(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS, updated.getState());
@@ -121,8 +122,8 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
                       .build();
               t.kituExamineeDetails(kituExamineeDetails);
             });
-    assertEquals(Tiedote.STATE_OPPIJAN_VALIDOINTI, before.getState());
-    fetchOppijaTask.execute();
+    assertEquals(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI, before.getState());
+    validateTiedoteTask.execute();
 
     var after = tiedoteRepository.findById(before.getId()).orElseThrow();
     assertEquals(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS, after.getState());
@@ -146,7 +147,7 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
             .opiskeluoikeusOid(OidGenerator.generateOpiskeluoikeusOid())
             .retryCount(0)
             .idempotencyKey(UUID.randomUUID().toString())
-            .state(Tiedote.STATE_OPPIJAN_VALIDOINTI)
+            .state(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI)
             .kituKatuosoite("Hellin Sevillantes kotiosoite")
             .kituPostinumero("09999")
             .kituPostitoimipaikka("Hellin Sevillantes postitoimipaikka")
@@ -154,14 +155,14 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
             .build();
     tiedoteRepository.save(tiedote);
 
-    fetchOppijaTask.execute();
+    validateTiedoteTask.execute();
 
     var after = tiedoteRepository.findById(tiedote.getId()).orElseThrow();
     assertThat(after.getViesti()).isNull();
     Assertions.assertThat(output)
         .contains("java.lang.IllegalArgumentException: Tiedote maakoodi is null");
 
-    assertEquals(Tiedote.STATE_OPPIJAN_VALIDOINTI, after.getState());
+    assertEquals(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI, after.getState());
     assertEquals(1, after.getRetryCount());
     assertNotNull(after.getNextRetry());
   }
@@ -214,7 +215,7 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
             .opiskeluoikeusOid(OidGenerator.generateOpiskeluoikeusOid())
             .retryCount(0)
             .idempotencyKey(UUID.randomUUID().toString())
-            .state(Tiedote.STATE_OPPIJAN_VALIDOINTI)
+            .state(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI)
             .kituKatuosoite("Hellin Sevillantes kotiosoite")
             .kituPostinumero("09999")
             .kituPostitoimipaikka("Hellin Sevillantes postitoimipaikka")
@@ -223,7 +224,7 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
     modifyTiedote.accept(tiedote);
     tiedoteRepository.save(tiedote);
 
-    fetchOppijaTask.execute();
+    validateTiedoteTask.execute();
 
     Assertions.assertThat(output).containsPattern(expectedExceptionMessage);
   }
@@ -236,7 +237,7 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
 
     var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
 
-    fetchOppijaTask.execute();
+    validateTiedoteTask.execute();
 
     var updatedTiedote = tiedoteRepository.findById(tiedote.getId()).orElseThrow();
     assertNull(updatedTiedote.getProcessedAt());
@@ -252,12 +253,60 @@ public class FetchOppijaTaskTest extends TiedotuspalveluApiTest implements Resou
 
     var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
 
-    fetchOppijaTask.execute();
+    validateTiedoteTask.execute();
 
     var updatedTiedote = tiedoteRepository.findById(tiedote.getId()).orElseThrow();
     assertNotNull(updatedTiedote.getProcessedAt());
     assertEquals(0, updatedTiedote.getRetryCount());
     assertNull(updatedTiedote.getNextRetry());
+  }
+
+  @Test
+  public void setsMessageTypeToPaperMailIfPersonHasNoHetu() throws Exception {
+    var noHetuResponseBody =
+        """
+      {
+        "oppijanumero": "%s",
+        "etunimet": "Hellin Hetuton",
+        "sukunimi": "Sukunimi"
+      }
+      """
+            .formatted(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    stubOppijanumerorekisteri("/henkilo/" + OPPIJANUMERO_HELLIN_SEVILLANTES, noHetuResponseBody);
+
+    var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    validateTiedoteTask.execute();
+
+    var after = tiedoteRepository.findById(tiedote.getId()).orElseThrow();
+    assertNull(after.getViesti().getHenkilotunnus());
+    assertThat(after.getViesti().getMessageType())
+        .isEqualTo(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
+    assertThat(after.getState()).isEqualTo(Tiedote.STATE_KIELITUTKINTOTODISTUKSEN_NOUTO);
+  }
+
+  @Test
+  public void setsMessageTypeToElectronicIfPersonHasHetu() throws Exception {
+    var withHetuResponseBody =
+        """
+          {
+            "oppijanumero": "%s",
+            "hetu": "041157-998B",
+            "etunimet": "Hellin Hetullinen",
+            "sukunimi": "Sukunimi"
+          }
+          """
+            .formatted(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    stubOppijanumerorekisteri("/henkilo/" + OPPIJANUMERO_HELLIN_SEVILLANTES, withHetuResponseBody);
+
+    var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    validateTiedoteTask.execute();
+
+    var after = tiedoteRepository.findById(tiedote.getId()).orElseThrow();
+    assertNotNull(after.getViesti().getHenkilotunnus());
+    assertThat(after.getViesti().getMessageType())
+        .isEqualTo(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_ELECTRONIC);
+    // Sends tiedote immediately to sending stage
+    assertThat(after.getState()).isEqualTo(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
   }
 
   private void stubOppijanumerorekisteri(String urlPattern, String responseBody) {
