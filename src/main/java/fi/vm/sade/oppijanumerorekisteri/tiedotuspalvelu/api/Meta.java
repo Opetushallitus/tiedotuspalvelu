@@ -5,4 +5,4 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public record Meta(
     @Schema(example = Tiedote.TYPE_KIELITUTKINTOTODISTUS) String type,
-    @Schema(example = Tiedote.STATE_OPPIJAN_VALIDOINTI) String state) {}
+    @Schema(example = Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI) String state) {}

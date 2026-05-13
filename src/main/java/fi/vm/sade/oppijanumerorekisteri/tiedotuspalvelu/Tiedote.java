@@ -21,7 +21,8 @@ import lombok.Setter;
 public class Tiedote {
   public static final String TYPE_KIELITUTKINTOTODISTUS = "KIELITUTKINTOTODISTUS";
 
-  public static final String STATE_OPPIJAN_VALIDOINTI = "OPPIJAN_VALIDOINTI";
+  public static final String STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI =
+      "TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI";
   public static final String STATE_SUOMIFI_VIESTIN_LÄHETYS = "SUOMIFI_VIESTIN_LÄHETYS";
   public static final String STATE_KIELITUTKINTOTODISTUKSEN_NOUTO =
       "KIELITUTKINTOTODISTUKSEN_NOUTO";

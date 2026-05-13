@@ -19,7 +19,7 @@ public class TiedoteDtoMapper {
         .todistusObjectKey(tiedoteDto.todistusObjectKey())
         .opiskeluoikeusOid(opiskeluoikeusOid)
         .type(Tiedote.TYPE_KIELITUTKINTOTODISTUS)
-        .state(Tiedote.STATE_OPPIJAN_VALIDOINTI)
+        .state(Tiedote.STATE_TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI)
         .todistuskieli(tiedoteDto.kituExamineeDetails().todistuskieli().koodiarvo())
         .todistuskieliKoodistoUri(tiedoteDto.kituExamineeDetails().todistuskieli().koodistoUri())
         .maakoodi(tiedoteDto.kituExamineeDetails().maa().koodiarvo())

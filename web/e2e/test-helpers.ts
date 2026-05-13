@@ -12,8 +12,8 @@ export async function reset(request: APIRequestContext) {
   expect(response.ok()).toBeTruthy();
 }
 
-export async function runFetchOppijaTask(request: APIRequestContext) {
-  const response = await request.post("/test/runFetchOppijaTask");
+export async function runValidateTiedoteTask(request: APIRequestContext) {
+  const response = await request.post("/test/runValidateTiedoteTask");
   expect(response.ok()).toBeTruthy();
 }
 export async function runSendSuomiFiViestitTask(request: APIRequestContext) {

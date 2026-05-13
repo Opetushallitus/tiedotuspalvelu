@@ -6,7 +6,7 @@ import {
   OPPIJANUMERO_SEVILLANTES_HENNAKARINA,
   generateOpiskeluoikeusOid,
   runSendSuomiFiViestitTask,
-  runFetchOppijaTask,
+  runValidateTiedoteTask,
   downloadReportAndFindLine,
   runFetchKielitutkintotodistusTask,
 } from "./test-helpers";
@@ -57,10 +57,11 @@ test("Kielitutkintotodistus - Suomi.fi-viestit ei käytössä", async ({
     ).toMatchObject({
       "Tiedotteen vastaanottajan oppijanumero":
         OPPIJANUMERO_SEVILLANTES_HENNAKARINA,
-      "Tiedotteen käsittelyn tila tiedotuspalvelussa": "OPPIJAN_VALIDOINTI",
+      "Tiedotteen käsittelyn tila tiedotuspalvelussa":
+        "TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI",
       "Kielitutkintotodistuksen S3 URL": `s3://bucket/${todistusUuid}/todistus.pdf`,
     });
-    await runFetchOppijaTask(request);
+    await runValidateTiedoteTask(request);
     expect(
       await downloadReportAndFindLine(page, tiedoteApiResponse.id),
     ).toMatchObject({

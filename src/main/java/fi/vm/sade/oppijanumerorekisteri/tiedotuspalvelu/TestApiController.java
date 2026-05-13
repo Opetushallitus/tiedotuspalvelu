@@ -1,7 +1,7 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.koski.FetchKielitutkintotodistusTask;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.FetchOppijaTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SendSuomiFiViestitTask;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TestApiController {
   private final JdbcTemplate jdbcTemplate;
-  private final FetchOppijaTask fetchOppijaTask;
+  private final ValidateTiedoteTask validateTiedoteTask;
   private final SendSuomiFiViestitTask sendSuomiFiViestitTask;
   private final FetchKielitutkintotodistusTask fetchKielitutkintotodistusTask;
 
@@ -51,9 +51,9 @@ public class TestApiController {
     return ResponseEntity.noContent().build();
   }
 
-  @PostMapping("/test/runFetchOppijaTask")
-  public ResponseEntity<Void> runFetchOppijaTask() {
-    fetchOppijaTask.execute();
+  @PostMapping("/test/runValidateTiedoteTask")
+  public ResponseEntity<Void> runValidateTiedoteTask() {
+    validateTiedoteTask.execute();
     return ResponseEntity.noContent().build();
   }
 

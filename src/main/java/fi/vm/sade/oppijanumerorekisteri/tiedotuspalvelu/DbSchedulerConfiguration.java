@@ -10,7 +10,7 @@ import fi.vm.sade.JdbcSessionMappingStorage;
 import fi.vm.sade.RequestIdFilter;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.koski.FetchKielitutkintotodistusTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.locale.FetchLocalisationsTask;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.FetchOppijaTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.FetchSuomiFiViestitEventsTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SendSuomiFiViestitTask;
 import java.time.Duration;
@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @AllArgsConstructor
 public class DbSchedulerConfiguration {
-  private final FetchOppijaTask fetchOppijaTask;
+  private final ValidateTiedoteTask validateTiedoteTask;
   private final FetchKielitutkintotodistusTask fetchKielitutkintotodistusTask;
   private final SendSuomiFiViestitTask sendSuomiFiViestitTask;
   private final FetchSuomiFiViestitEventsTask fetchSuomiFiViestitEventsTask;
@@ -38,7 +38,7 @@ public class DbSchedulerConfiguration {
     return wrapTaskWithRequestId(
         "fetch-oppija-task",
         Schedules.fixedDelay(Duration.ofSeconds(10)),
-        fetchOppijaTask::execute);
+        validateTiedoteTask::execute);
   }
 
   @Bean
