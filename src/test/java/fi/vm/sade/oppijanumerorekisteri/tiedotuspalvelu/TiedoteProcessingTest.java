@@ -11,7 +11,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.FetchOppijaTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.koski.FetchKielitutkintotodistusTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SendSuomiFiViestitTask;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +24,13 @@ import org.springframework.test.context.DynamicPropertySource;
 
 public class TiedoteProcessingTest extends TiedotuspalveluApiTest implements ResourceReader {
 
-  @Autowired private FetchOppijaTask fetchOppijaTask;
+  @Autowired private ValidateTiedoteTask validateTiedoteTask;
   @Autowired private SendSuomiFiViestitTask sendSuomiFiViestitTask;
+  @Autowired private FetchKielitutkintotodistusTask fetchKielitutkintotodistusTask;
 
-  @RegisterExtension
-  static WireMockExtension wireMock =
+  private static String NON_HETU_OPPIJANUMERO = "1.2.246.562.24.59505755490";
+
+  private @RegisterExtension static WireMockExtension wireMock =
       WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build();
 
   private static final String SUOMIFI_USERNAME = UUID.randomUUID().toString();
@@ -67,13 +70,102 @@ public class TiedoteProcessingTest extends TiedotuspalveluApiTest implements Res
 
     var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
 
-    fetchOppijaTask.execute();
+    validateTiedoteTask.execute();
     sendSuomiFiViestitTask.execute();
 
     var t = getTiedote(tiedote.getId());
-    assertEquals("TIEDOTE_KÄSITELTY", t.meta().state());
+    assertEquals(Tiedote.STATE_TIEDOTE_KÄSITELTY, t.meta().state());
     assertEquals("CREATED", t.statuses().get(0).status());
     assertEquals("SENT_TO_SUOMIFI_VIESTIT", t.statuses().get(1).status());
+  }
+
+  @Test
+  public void sendsTiedoteToFetchKielitutkintoIfNoSuomiFiElectronicMailboxInUse() throws Exception {
+    stubGettingOtuvaOauthToken();
+    stubGettingOppija();
+    stubGettingSuomiFiViestitToken();
+    stubSendingSuomiFiElectronicMessageFailsWithNoMailbox();
+    stubSendingSuomiFiMultiChannelMessage();
+    stubSendingSuomiFiAttachmentsMessage();
+
+    var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    validateTiedoteTask.execute();
+    sendSuomiFiViestitTask.execute();
+
+    var t = getTiedote(tiedote.getId());
+    assertEquals(Tiedote.STATE_KIELITUTKINTOTODISTUKSEN_NOUTO, t.meta().state());
+    assertEquals("CREATED", t.statuses().get(0).status());
+    assertEquals(1, t.statuses().size());
+  }
+
+  @Test
+  public void sendsTiedoteBackToSendSuomiFiViestiTaskAfterFetchingKielitutkinto() throws Exception {
+    stubGettingOtuvaOauthToken();
+    stubGettingOppija();
+    stubGettingSuomiFiViestitToken();
+    stubSendingSuomiFiElectronicMessageFailsWithNoMailbox();
+    stubSendingSuomiFiMultiChannelMessage();
+    stubSendingSuomiFiAttachmentsMessage();
+
+    var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    validateTiedoteTask.execute();
+    sendSuomiFiViestitTask.execute();
+    fetchKielitutkintotodistusTask.execute();
+
+    var t = getTiedote(tiedote.getId());
+    assertEquals(Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA, t.meta().state());
+    assertEquals("CREATED", t.statuses().get(0).status());
+  }
+
+  @Test
+  public void sendsPaperMailSuomiFiViesti() throws Exception {
+    stubGettingOtuvaOauthToken();
+    stubGettingOppija();
+    stubGettingSuomiFiViestitToken();
+    stubSendingSuomiFiElectronicMessageFailsWithNoMailbox();
+    stubSendingSuomiFiMultiChannelMessage();
+    stubSendingSuomiFiAttachmentsMessage();
+
+    var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    validateTiedoteTask.execute();
+    sendSuomiFiViestitTask.execute();
+    fetchKielitutkintotodistusTask.execute();
+    sendSuomiFiViestitTask.execute();
+
+    var t = getTiedote(tiedote.getId());
+    assertEquals(Tiedote.STATE_TIEDOTE_KÄSITELTY, t.meta().state());
+    assertEquals("CREATED", t.statuses().get(0).status());
+  }
+
+  @Test
+  public void sendsNonHetuPersonDirectlyToFetchKielitutkintoAfterValidateTiedote()
+      throws Exception {
+    stubGettingOtuvaOauthToken();
+    stubGettingNonHetuOppija();
+
+    var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    validateTiedoteTask.execute();
+
+    var t = getTiedote(tiedote.getId());
+    assertEquals(Tiedote.STATE_KIELITUTKINTOTODISTUKSEN_NOUTO, t.meta().state());
+  }
+
+  @Test
+  public void sendsNonHetuPersonSuomiFiViesti() throws Exception {
+    stubGettingOtuvaOauthToken();
+    stubGettingNonHetuOppija();
+    stubGettingSuomiFiViestitToken();
+    stubSendingSuomiFiElectronicMessageFailsWithNoMailbox();
+    stubSendingNoIdSuomiFiMessage();
+    stubSendingSuomiFiAttachmentsMessage();
+
+    var tiedote = createTiedote(OPPIJANUMERO_HELLIN_SEVILLANTES);
+    validateTiedoteTask.execute();
+    fetchKielitutkintotodistusTask.execute();
+    sendSuomiFiViestitTask.execute();
+
+    var t = getTiedote(tiedote.getId());
+    assertEquals(Tiedote.STATE_TIEDOTE_KÄSITELTY, t.meta().state());
   }
 
   private void stubGettingOppija() {
@@ -88,9 +180,69 @@ public class TiedoteProcessingTest extends TiedotuspalveluApiTest implements Res
                         readResource("/henkilo/" + OPPIJANUMERO_HELLIN_SEVILLANTES + ".json"))));
   }
 
+  private void stubGettingNonHetuOppija() {
+    var responseBody =
+        """
+    {
+      "oppijanumero": "%s",
+      "hetu": null,
+      "etunimet": "Hellin Hetuton",
+      "sukunimi": "Sukunimi"
+    }
+    """;
+    wireMock.stubFor(
+        get(urlPathMatching("/henkilo/" + OPPIJANUMERO_HELLIN_SEVILLANTES))
+            .withHeader("Authorization", equalTo("Bearer " + OPPIJA_TOKEN))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(responseBody)));
+  }
+
   private void stubSendingSuomiFiElectronicMessage() {
     wireMock.stubFor(
         post(urlEqualTo("/v2/messages/electronic"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"messageId\": \"%s\"}".formatted(SUOMIFI_MESSAGE_ID))));
+  }
+
+  private void stubSendingSuomiFiElectronicMessageFailsWithNoMailbox() {
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages/electronic"))
+            .willReturn(
+                aResponse()
+                    .withStatus(400)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"errorCode\": \"MAILBOX_NOT_IN_USE\"}")));
+  }
+
+  private void stubSendingSuomiFiAttachmentsMessage() {
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/attachments"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"attachmentId\": \"attach-123\"}")));
+  }
+
+  private void stubSendingSuomiFiMultiChannelMessage() {
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"messageId\": \"%s\"}".formatted(SUOMIFI_MESSAGE_ID))));
+  }
+
+  private void stubSendingNoIdSuomiFiMessage() {
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/paper-mail-without-id"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
