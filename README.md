@@ -1,8 +1,8 @@
 # Tiedotuspalvelu
 
-Vuokaavio tiedotteen kulkemisesta järjestelmässä (vanhentunut): [vuokaavio](./flowchart.md)
+Vuokaavio tiedotteen kulkemisesta järjestelmässä: [vuokaavio](./flowchart.md)
 
-Tilakaavio tiedotteen kulkemisesta järjestelmässä (uudempi, ajantasainen 2026-05-15): [tilakaavio](./state-diagram.md)
+Tilakaavio tiedotteen kulkemisesta järjestelmässä: [tilakaavio](./state-diagram.md)
 
 ## Tilojen kuvauksia
 
