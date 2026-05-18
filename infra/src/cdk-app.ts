@@ -748,7 +748,7 @@ class OutgoingRequestMonitoring extends constructs.Construct {
       {
         statusClass: "4XX",
         name: "4XX",
-        threshold: 1,
+        threshold: 10,
       },
       {
         statusClass: "5XX",
