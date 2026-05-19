@@ -6,23 +6,21 @@ import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
 import com.github.kagkarlsson.scheduler.task.schedule.Schedule;
 import com.github.kagkarlsson.scheduler.task.schedule.Schedules;
-import fi.vm.sade.JdbcSessionMappingStorage;
 import fi.vm.sade.RequestIdFilter;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.koski.FetchKielitutkintotodistusTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.locale.FetchLocalisationsTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasClientSessionCleanerTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.FetchSuomiFiViestitEventsTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SendSuomiFiViestitTask;
 import java.time.Duration;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@Slf4j
 @AllArgsConstructor
 public class DbSchedulerConfiguration {
   private final ValidateTiedoteTask validateTiedoteTask;
@@ -30,7 +28,7 @@ public class DbSchedulerConfiguration {
   private final SendSuomiFiViestitTask sendSuomiFiViestitTask;
   private final FetchSuomiFiViestitEventsTask fetchSuomiFiViestitEventsTask;
   private final FetchLocalisationsTask fetchLocalisationsTask;
-  private final JdbcSessionMappingStorage jdbcSessionMappingStorage;
+  private final CasClientSessionCleanerTask casClientSessionCleanerTask;
 
   @Bean
   @ConditionalOnProperty(name = "tiedotuspalvelu.fetch-oppija.enabled", havingValue = "true")
@@ -84,10 +82,7 @@ public class DbSchedulerConfiguration {
     return wrapTaskWithRequestId(
         "cas-client-session-cleaner",
         Schedules.fixedDelay(Duration.ofHours(1)),
-        () -> {
-          jdbcSessionMappingStorage.clean();
-          log.info("Finished running CasClientSessionCleanerTask");
-        });
+        casClientSessionCleanerTask::execute);
   }
 
   private Task<Void> wrapTaskWithRequestId(String name, Schedule schedule, Runnable action) {
