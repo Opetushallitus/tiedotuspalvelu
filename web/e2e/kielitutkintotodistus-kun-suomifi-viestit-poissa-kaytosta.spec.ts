@@ -102,6 +102,12 @@ test("Kielitutkintotodistus - Suomi.fi-viestit ei käytössä", async ({
       ),
     ).toBeVisible();
 
+    // formats content based on markdown, the first element should be h2
+    const titleHtml = await page
+      .getByTestId("omatViestitViestiContent")
+      .innerHTML();
+    expect(titleHtml.substring(0, 4)).toEqual("<h2>");
+
     await test.step("todistuslinkki vie Kosken omat tiedot näkymään", async () => {
       const linkki = page.getByRole("link", {
         name: "https://opintopolku.fi/koski/omattiedot",

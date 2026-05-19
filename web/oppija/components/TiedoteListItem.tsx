@@ -12,7 +12,7 @@ export function TiedoteListItem({ tiedote }: { tiedote: TiedoteDto }) {
   return (
     <li className="tp__item">
       <span className="tp__date">{dateText}</span>
-      <div className="tp__text">
+      <div data-testid="omatViestitViestiContent" className="tp__text">
         <ReactMarkdown>
           {t("OMAT_VIESTIT_KIELITUTKINTOTODISTUS_VIESTI")}
         </ReactMarkdown>
