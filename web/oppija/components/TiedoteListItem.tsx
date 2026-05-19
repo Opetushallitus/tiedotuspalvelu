@@ -1,4 +1,5 @@
 import React from "react";
+import ReactMarkdown from "react-markdown";
 
 import type { TiedoteDto } from "../api";
 import { formatFinnishDate } from "../date";
@@ -11,12 +12,14 @@ export function TiedoteListItem({ tiedote }: { tiedote: TiedoteDto }) {
   return (
     <li className="tp__item">
       <span className="tp__date">{dateText}</span>
-      <span className="tp__text">
-        {t("OMAT_VIESTIT_KIELITUTKINTOTODISTUS_VIESTI")}{" "}
+      <div className="tp__text">
+        <ReactMarkdown>
+          {t("OMAT_VIESTIT_KIELITUTKINTOTODISTUS_VIESTI")}
+        </ReactMarkdown>
         <a className="tp__link" target="_blank" href="/koski/omattiedot">
           {t("OMAT_VIESTIT_KIELITUTKINTOTODISTUS_LINKKI")}
         </a>
-      </span>
+      </div>
     </li>
   );
 }
