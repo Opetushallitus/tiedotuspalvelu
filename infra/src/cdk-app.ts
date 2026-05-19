@@ -312,7 +312,7 @@ class TiedotuspalveluStack extends cdk.Stack {
 
     if (config.tiedotuspalveluCapacity.max > 0) {
       if (config.features["tiedotuspalvelu.fetch-oppija.enabled"]) {
-        this.fetchOppijaAlarm(logGroup, props.alarmTopic);
+        this.validateTiedoteAlarm(logGroup, props.alarmTopic);
       }
       if (config.features["tiedotuspalvelu.suomifi-viestit.enabled"]) {
         this.sendSuomiFiViestitAlarm(logGroup, props.alarmTopic);
@@ -578,13 +578,13 @@ class TiedotuspalveluStack extends cdk.Stack {
     }
   }
 
-  fetchOppijaAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
+  validateTiedoteAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
     alarms.alarmIfExpectedLogLineIsMissing(
       this,
-      "FetchOppijaTask",
+      "ValidateTiedoteTask",
       logGroup,
       alarmTopic,
-      logs.FilterPattern.literal('"Finished running FetchOppijaTask"'),
+      logs.FilterPattern.literal('"Finished running ValidateTiedoteTask"'),
     );
   }
 
