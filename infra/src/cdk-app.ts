@@ -260,6 +260,27 @@ class TiedotusDatabaseStack extends cdk.Stack {
   ) {
     super(scope, id, props);
 
+    const s3ImportRole = new iam.Role(this, "DbS3ImportRole", {
+      assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
+    });
+    s3ImportRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:GetObject"],
+        resources: [
+          `arn:aws:s3:::${config.oppijanumerorekisteriExportBucket}/fulldump/henkilo/v1/*`,
+        ],
+      }),
+    );
+    s3ImportRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:ListBucket"],
+        resources: [`arn:aws:s3:::${config.oppijanumerorekisteriExportBucket}`],
+        conditions: {
+          StringLike: { "s3:prefix": ["fulldump/henkilo/v1/*"] },
+        },
+      }),
+    );
+
     this.database = new rds.DatabaseCluster(this, "DatabaseCluster", {
       vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
@@ -272,6 +293,7 @@ class TiedotusDatabaseStack extends cdk.Stack {
       }),
       storageType: rds.DBClusterStorageType.AURORA,
       storageEncrypted: true,
+      s3ImportRole: s3ImportRole,
       writer: rds.ClusterInstance.provisioned("writer", {
         enablePerformanceInsights: true,
         instanceType: ec2.InstanceType.of(
@@ -320,6 +342,9 @@ class TiedotuspalveluStack extends cdk.Stack {
       }
       this.fetchLocalisationsAlarm(logGroup, props.alarmTopic);
       this.casClientSessionCleanerAlarm(logGroup, props.alarmTopic);
+      if (config.features["tiedotuspalvelu.henkilo-import.enabled"]) {
+        this.henkiloImportAlarm(logGroup, props.alarmTopic);
+      }
 
       new OutgoingRequestMonitoring(this, "OutgoingRequestMonitoring", {
         logGroup,
@@ -373,6 +398,9 @@ class TiedotuspalveluStack extends cdk.Stack {
         "spring.security.oauth2.resourceserver.jwt.jwk-set-uri": `https://${getEnvironment()}.otuva.opintopolku.fi/kayttooikeus-service/oauth2/jwks`,
         "spring.datasource.url": `jdbc:postgresql://${props.database.clusterEndpoint.hostname}:${props.database.clusterEndpoint.port}/tiedotuspalvelu`,
         "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": `${config.features["tiedotuspalvelu.fetch-kielitutkintotodistus.enabled"]}`,
+        "tiedotuspalvelu.henkilo-import.enabled": `${config.features["tiedotuspalvelu.henkilo-import.enabled"]}`,
+        "tiedotuspalvelu.henkilo-import.bucket-name":
+          config.oppijanumerorekisteriExportBucket,
         "tiedotuspalvelu.koski-role-arn": koskiRoleArn,
         "tiedotuspalvelu.suomifi-viestit.posti.contact-email":
           ssm.StringParameter.valueForStringParameter(
@@ -485,6 +513,15 @@ class TiedotuspalveluStack extends cdk.Stack {
       new iam.PolicyStatement({
         actions: ["sts:AssumeRole"],
         resources: [koskiRoleArn],
+      }),
+    );
+
+    taskDefinition.addToTaskRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:GetObject"],
+        resources: [
+          `arn:aws:s3:::${config.oppijanumerorekisteriExportBucket}/fulldump/henkilo/v1/*`,
+        ],
       }),
     );
 
@@ -620,6 +657,18 @@ class TiedotuspalveluStack extends cdk.Stack {
       logGroup,
       alarmTopic,
       logs.FilterPattern.literal('"Finished running FetchLocalisationsTask"'),
+    );
+  }
+
+  henkiloImportAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
+    alarms.alarmIfExpectedLogLineIsMissing(
+      this,
+      "HenkiloImportTask",
+      logGroup,
+      alarmTopic,
+      logs.FilterPattern.literal('"Finished running HenkiloImportTask"'),
+      cdk.Duration.hours(2),
+      1,
     );
   }
 

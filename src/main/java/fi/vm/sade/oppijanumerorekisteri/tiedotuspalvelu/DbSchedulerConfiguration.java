@@ -9,6 +9,7 @@ import com.github.kagkarlsson.scheduler.task.schedule.Schedules;
 import fi.vm.sade.RequestIdFilter;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.koski.FetchKielitutkintotodistusTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.locale.FetchLocalisationsTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.HenkiloImportTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasClientSessionCleanerTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.FetchSuomiFiViestitEventsTask;
@@ -75,6 +76,15 @@ public class DbSchedulerConfiguration {
         "fetch-localisations-task",
         Schedules.fixedDelay(Duration.ofMinutes(5)),
         fetchLocalisationsTask::execute);
+  }
+
+  @Bean
+  @ConditionalOnProperty(name = "tiedotuspalvelu.henkilo-import.enabled", havingValue = "true")
+  public Task<Void> henkiloImportTaskBean(HenkiloImportTask henkiloImportTask) {
+    return wrapTaskWithRequestId(
+        "henkilo-import-task",
+        Schedules.fixedDelay(Duration.ofMinutes(15)),
+        henkiloImportTask::execute);
   }
 
   @Bean

@@ -11,12 +11,14 @@ export type Config = {
   opintopolkuHost: string;
   virkailijaHost: string;
   tiedotuspalveluCapacity: AutoScalingLimits;
+  oppijanumerorekisteriExportBucket: string;
   features: {
     vtj: boolean;
     "tiedotuspalvelu.fetch-oppija.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.base-url": string;
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": boolean;
+    "tiedotuspalvelu.henkilo-import.enabled": boolean;
   };
 };
 
@@ -29,6 +31,7 @@ const defaultConfig = {
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
+    "tiedotuspalvelu.henkilo-import.enabled": true,
   },
 };
 
@@ -59,12 +62,15 @@ export const hahtuva: Config = {
   tiedotuspalveluDomain: "hahtuva.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "hahtuvaopintopolku.fi",
   virkailijaHost: "virkailija.hahtuvaopintopolku.fi",
+  oppijanumerorekisteriExportBucket:
+    "oppijanumerorekisteridatabase-exportbucket4e99310e-fg1jtjhmw1ak",
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": false,
+    "tiedotuspalvelu.henkilo-import.enabled": true,
   },
 };
 
@@ -75,12 +81,15 @@ export const dev: Config = {
   tiedotuspalveluDomain: "dev.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "untuvaopintopolku.fi",
   virkailijaHost: "virkailija.untuvaopintopolku.fi",
+  oppijanumerorekisteriExportBucket:
+    "oppijanumerorekisteridatabase-exportbucket4e99310e-lwgbft1l0xt9",
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
+    "tiedotuspalvelu.henkilo-import.enabled": true,
   },
 };
 
@@ -91,6 +100,8 @@ export const qa: Config = {
   tiedotuspalveluDomain: "qa.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "testiopintopolku.fi",
   virkailijaHost: "virkailija.testiopintopolku.fi",
+  oppijanumerorekisteriExportBucket:
+    "oppijanumerorekisteridatabase-exportbucket4e99310e-jvyilz0imgsj",
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -98,6 +109,7 @@ export const qa: Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url":
       "https://api.messages-qa.suomi.fi",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
+    "tiedotuspalvelu.henkilo-import.enabled": true,
   },
 };
 
@@ -107,6 +119,8 @@ export const prod: Config = {
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
+  oppijanumerorekisteriExportBucket:
+    "oppijanumerorekisteridatabase-exportbucket4e99310e-ycy54wagxhzo",
   features: {
     ...defaultConfig.features,
   },
