@@ -65,7 +65,7 @@ h2 {
   flex: 1;
 }
 
-.tp__text p:first-of-type {
+.tp__text > *:first-child {
   margin-top: 0;
 }
 
