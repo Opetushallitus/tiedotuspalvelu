@@ -82,7 +82,6 @@ function parse_env_from_script_name {
 }
 
 function aws {
-  info "Running AWS docker container"
   docker run \
     --platform linux/amd64 \
     --env AWS_PROFILE \
