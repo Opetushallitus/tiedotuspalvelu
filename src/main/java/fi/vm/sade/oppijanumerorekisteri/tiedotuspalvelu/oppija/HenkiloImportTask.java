@@ -22,9 +22,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "tiedotuspalvelu.henkilo-import.enabled", havingValue = "true")
 public class HenkiloImportTask {
-  private static final String PREFIX = "fulldump/henkilo/v1/";
-  private static final String MANIFEST_KEY = PREFIX + "manifest.json";
-  private static final String HENKILO_CSV_KEY = PREFIX + "henkilo.csv";
+  private static final String MANIFEST_KEY = "fulldump/henkilo/v1/manifest.json";
+  private static final String HENKILO_CSV_KEY = "fulldump/henkilo/v1/henkilo.csv";
 
   @Value("${tiedotuspalvelu.henkilo-import.bucket-name}")
   private String bucketName;
@@ -55,7 +54,7 @@ public class HenkiloImportTask {
     var manifest = readManifest();
     verifyManifestHasHenkiloCsv(manifest);
 
-    var rowCount = henkiloTableLoader.load(bucketName, HENKILO_CSV_KEY);
+    var rowCount = henkiloTableLoader.load(HENKILO_CSV_KEY);
     recordImport(manifestETag, rowCount);
     log.info("Imported {} henkilos (manifest etag {})", rowCount, manifestETag);
   }
@@ -91,16 +90,15 @@ public class HenkiloImportTask {
             .join()) {
       return objectMapper.readValue(stream, ExportManifest.class);
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to read henkilo export manifest", e);
+      throw new RuntimeException("Failed to read henkilo export manifest", e);
     }
   }
 
   private void verifyManifestHasHenkiloCsv(ExportManifest manifest) {
     var hasFile =
-        manifest.exportFiles() != null
-            && manifest.exportFiles().stream().anyMatch(f -> HENKILO_CSV_KEY.equals(f.objectKey()));
+        manifest.exportFiles().stream().anyMatch(f -> HENKILO_CSV_KEY.equals(f.objectKey()));
     if (!hasFile) {
-      throw new IllegalStateException(
+      throw new RuntimeException(
           "Henkilo export manifest does not list " + HENKILO_CSV_KEY + ": " + manifest);
     }
   }

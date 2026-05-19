@@ -1,6 +1,7 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.koski.FetchKielitutkintotodistusTask;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.HenkiloTableLoader;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SendSuomiFiViestitTask;
 import java.util.List;
@@ -27,6 +28,7 @@ public class TestApiController {
   private final ValidateTiedoteTask validateTiedoteTask;
   private final SendSuomiFiViestitTask sendSuomiFiViestitTask;
   private final FetchKielitutkintotodistusTask fetchKielitutkintotodistusTask;
+  private final HenkiloTableLoader henkiloTableLoader;
 
   @Bean
   @Order(0)
@@ -48,6 +50,7 @@ public class TestApiController {
             "suomifi_viestit_event",
             "suomifi_viestit_events_cursor");
     jdbcTemplate.execute("TRUNCATE " + Strings.join(tables, ',') + " CASCADE");
+    henkiloTableLoader.load("fulldump/henkilo/v1/henkilo.csv");
     return ResponseEntity.noContent().build();
   }
 

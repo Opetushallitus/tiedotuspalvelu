@@ -2,6 +2,7 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api;
 
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.Tiedote;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedoteRepository;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.HenkiloRepository;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SuomiFiViestitEventRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityManager;
@@ -9,6 +10,7 @@ import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/omat-viestit/api/v1")
@@ -27,14 +30,17 @@ public class ApiController {
   private final TiedoteRepository tiedoteRepository;
   private final SuomiFiViestitEventRepository suomiFiViestitEventRepository;
   private final EntityManager entityManager;
+  private final HenkiloRepository henkiloRepository;
 
   public ApiController(
       TiedoteRepository tiedoteRepository,
       SuomiFiViestitEventRepository suomiFiViestitEventRepository,
-      EntityManager entityManager) {
+      EntityManager entityManager,
+      HenkiloRepository henkiloRepository) {
     this.tiedoteRepository = tiedoteRepository;
     this.suomiFiViestitEventRepository = suomiFiViestitEventRepository;
     this.entityManager = entityManager;
+    this.henkiloRepository = henkiloRepository;
   }
 
   @PostMapping("/tiedote/kielitutkintotodistus")
@@ -44,6 +50,11 @@ public class ApiController {
     var existingTiedote = tiedoteRepository.findByIdempotencyKey(tiedoteDto.idempotencyKey());
     if (existingTiedote.isPresent()) {
       return buildTiedoteResponse(existingTiedote.get());
+    }
+
+    if (!henkiloRepository.existsById(tiedoteDto.oppijanumero())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Tuntematon oppijanumero: " + tiedoteDto.oppijanumero());
     }
 
     var tiedote = TiedoteDtoMapper.toModel(tiedoteDto);

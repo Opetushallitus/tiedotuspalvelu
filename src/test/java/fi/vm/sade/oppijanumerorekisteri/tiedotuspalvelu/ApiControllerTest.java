@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.UUID;
 import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
@@ -19,6 +20,13 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
   private static final String OPPIJANUMERO = OidGenerator.generateHenkiloOid();
   private static final String OPISKELUOIKEUS_OID = OidGenerator.generateOpiskeluoikeusOid();
+
+  @BeforeEach
+  public void setup() {
+    clearDatabase();
+    super.seedHenkiloFixture();
+    seedHenkilo(OPPIJANUMERO);
+  }
 
   @Test
   public void createTiedoteRequiresAuthentication() throws Exception {
@@ -43,7 +51,6 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
   @Test
   public void createTiedoteSucceedsWithValidData() throws Exception {
-    clearDatabase();
     String idempotencyKey = UUID.randomUUID().toString();
     var returnedId = postTiedoteAndReturnId(tiedoteJson(idempotencyKey, "fi"));
 
@@ -102,7 +109,6 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
   @Test
   public void createTiedoteWithSameIdempotencyKeyReturnsSameId() throws Exception {
-    clearDatabase();
     String idempotencyKey = UUID.randomUUID().toString();
     var json = tiedoteJson(idempotencyKey, "fi");
     var firstId = postTiedoteAndReturnId(json);
@@ -117,8 +123,6 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
   @Test
   public void createTiedoteWithDifferentIdempotencyKeysCreatesDifferentRecords() throws Exception {
-    clearDatabase();
-
     var firstId = postTiedoteAndReturnId(tiedoteJson(UUID.randomUUID().toString(), "fi"));
     var secondId = postTiedoteAndReturnId(tiedoteJson(UUID.randomUUID().toString(), "fi"));
 

@@ -79,7 +79,7 @@ public class OauthConfigurationTest extends TiedotuspalveluApiTest {
   private @NonNull String createValidContent(String uuid) {
     return """
            {
-             "oppijanumero": "1.2.246.562.24.00000000001",
+             "oppijanumero": "%s",
              "opiskeluoikeusOid": "1.2.246.562.15.00000000001",
              "todistusBucket": "bucket",
              "todistusKey": "%s/todistus.pdf",
@@ -99,7 +99,7 @@ public class OauthConfigurationTest extends TiedotuspalveluApiTest {
              }
            }
            """
-        .formatted(uuid, uuid);
+        .formatted(OPPIJANUMERO_NORDEA_DEMO, uuid, uuid);
   }
 
   @Test

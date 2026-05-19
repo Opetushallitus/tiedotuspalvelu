@@ -7,6 +7,7 @@ import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituExamineeDetailsD
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituKoodiarvoDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.TiedoteDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.TiedoteResponse;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.HenkiloTableLoader;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasOppijaUserDetailsService;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,6 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -39,12 +41,22 @@ public class TiedotuspalveluApiTest {
   @Autowired protected MockMvc mockMvc;
   @Autowired protected TiedoteRepository tiedoteRepository;
   @Autowired protected JdbcTemplate jdbc;
+  @Autowired protected HenkiloTableLoader henkiloTableLoader;
+
+  @BeforeEach
+  public void seedHenkiloFixture() {
+    henkiloTableLoader.load("fulldump/henkilo/v1/henkilo.csv");
+  }
 
   protected void clearDatabase() {
     var tables =
         List.of(
             "tiedote", "suomifi_viesti", "suomifi_viestit_event", "suomifi_viestit_events_cursor");
     jdbc.execute("TRUNCATE TABLE " + String.join(", ", tables) + " CASCADE");
+  }
+
+  protected void seedHenkilo(String oid) {
+    jdbc.update("INSERT INTO henkilo (oid) VALUES (?) ON CONFLICT (oid) DO NOTHING", oid);
   }
 
   // Use the JWKS URI to derive the token URL — this always points to the real
@@ -113,8 +125,10 @@ public class TiedotuspalveluApiTest {
             .opiskeluoikeusOid(OidGenerator.generateOpiskeluoikeusOid())
             .kituExamineeDetails(kituExamineeDetailsDto);
     requestModifier.accept(builder);
+    var dto = builder.build();
+    seedHenkilo(dto.oppijanumero());
 
-    var content = objectMapper.writeValueAsString(builder.build());
+    var content = objectMapper.writeValueAsString(dto);
     var response =
         mockMvc
             .perform(

@@ -2,6 +2,7 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -17,11 +18,14 @@ import software.amazon.awssdk.regions.Region;
     matchIfMissing = true)
 public class AwsS3HenkiloTableLoader implements HenkiloTableLoader {
 
+  @Value("${tiedotuspalvelu.henkilo-import.bucket-name}")
+  private String bucketName;
+
   private final JdbcTemplate jdbcTemplate;
   private final TransactionTemplate transactionTemplate;
 
   @Override
-  public long load(String bucketName, String objectKey) {
+  public long load(String objectKey) {
     return transactionTemplate.execute(
         status -> {
           jdbcTemplate.execute("TRUNCATE TABLE henkilo");
