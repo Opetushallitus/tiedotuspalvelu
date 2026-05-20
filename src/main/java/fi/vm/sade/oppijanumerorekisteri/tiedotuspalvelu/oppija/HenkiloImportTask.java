@@ -42,7 +42,7 @@ public class HenkiloImportTask {
   }
 
   private void importIfChanged() {
-    var manifestETag = headManifestETag();
+    var manifestETag = getEtag(bucketName, MANIFEST_KEY);
     var lastETag = currentlyImportedETag();
     if (lastETag.isPresent() && lastETag.get().equals(manifestETag)) {
       log.info("Henkilo manifest unchanged (etag {}), skipping import", manifestETag);
@@ -51,41 +51,32 @@ public class HenkiloImportTask {
     log.info(
         "Henkilo manifest changed (was {}, now {}), importing", lastETag.orElse("-"), manifestETag);
 
-    var manifest = readManifest();
-    verifyManifestHasHenkiloCsv(manifest);
+    var manifest = readManifest(MANIFEST_KEY);
+    verifyManifestHasHenkiloCsv(manifest, HENKILO_CSV_KEY);
 
     var rowCount = henkiloTableLoader.load(HENKILO_CSV_KEY);
     recordImport(manifestETag, rowCount);
     log.info("Imported {} henkilos (manifest etag {})", rowCount, manifestETag);
   }
 
-  private String headManifestETag() {
-    return stripQuotes(
-        onrExportS3Client.headObject(b -> b.bucket(bucketName).key(MANIFEST_KEY)).join().eTag());
-  }
-
-  private static String stripQuotes(String eTag) {
-    if (eTag == null) {
-      return null;
-    }
-    if (eTag.startsWith("\"") && eTag.endsWith("\"") && eTag.length() >= 2) {
-      return eTag.substring(1, eTag.length() - 1);
-    }
-    return eTag;
+  private String getEtag(String bucketName, String objectKey) {
+    log.info("Fetching ETag for {}/{}", bucketName, objectKey);
+    return onrExportS3Client.headObject(b -> b.bucket(bucketName).key(objectKey)).join().eTag();
   }
 
   private Optional<String> currentlyImportedETag() {
-    var rows =
-        jdbcTemplate.queryForList(
-            "SELECT manifest_etag FROM henkilo_import WHERE id = 1", String.class);
-    return rows.stream().findFirst();
+    return jdbcTemplate
+        .queryForList("SELECT manifest_etag FROM henkilo_import WHERE id = 1", String.class)
+        .stream()
+        .findFirst();
   }
 
-  private ExportManifest readManifest() {
+  private ExportManifest readManifest(String objectKey) {
+    log.info("Fetching object {}/{}", bucketName, objectKey);
     try (ResponseInputStream<GetObjectResponse> stream =
         onrExportS3Client
             .getObject(
-                b -> b.bucket(bucketName).key(MANIFEST_KEY),
+                b -> b.bucket(bucketName).key(objectKey),
                 AsyncResponseTransformer.toBlockingInputStream())
             .join()) {
       return objectMapper.readValue(stream, ExportManifest.class);
@@ -94,9 +85,8 @@ public class HenkiloImportTask {
     }
   }
 
-  private void verifyManifestHasHenkiloCsv(ExportManifest manifest) {
-    var hasFile =
-        manifest.exportFiles().stream().anyMatch(f -> HENKILO_CSV_KEY.equals(f.objectKey()));
+  private void verifyManifestHasHenkiloCsv(ExportManifest manifest, String expectedKey) {
+    var hasFile = manifest.exportFiles().stream().anyMatch(f -> expectedKey.equals(f.objectKey()));
     if (!hasFile) {
       throw new RuntimeException(
           "Henkilo export manifest does not list " + HENKILO_CSV_KEY + ": " + manifest);
@@ -105,10 +95,14 @@ public class HenkiloImportTask {
 
   private void recordImport(String manifestETag, long rowCount) {
     jdbcTemplate.update(
-        "INSERT INTO henkilo_import (id, manifest_etag, row_count, imported_at) "
-            + "VALUES (1, ?, ?, ?) "
-            + "ON CONFLICT (id) DO UPDATE SET manifest_etag = EXCLUDED.manifest_etag, "
-            + "row_count = EXCLUDED.row_count, imported_at = EXCLUDED.imported_at",
+        """
+        INSERT INTO henkilo_import (id, manifest_etag, row_count, imported_at)
+        VALUES (1, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET
+          manifest_etag = EXCLUDED.manifest_etag,
+          row_count = EXCLUDED.row_count,
+          imported_at = EXCLUDED.imported_at
+        """,
         manifestETag,
         rowCount,
         OffsetDateTime.now());

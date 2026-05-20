@@ -26,6 +26,7 @@ public class AwsS3HenkiloTableLoader implements HenkiloTableLoader {
 
   @Override
   public long load(String objectKey) {
+    log.info("Importing henkilos from {}/{}", bucketName, objectKey);
     return transactionTemplate.execute(
         status -> {
           jdbcTemplate.execute("TRUNCATE TABLE henkilo");
