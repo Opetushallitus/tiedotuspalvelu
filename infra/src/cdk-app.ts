@@ -280,6 +280,17 @@ class TiedotusDatabaseStack extends cdk.Stack {
         },
       }),
     );
+    s3ImportRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["kms:Decrypt"],
+        resources: ["*"],
+        conditions: {
+          StringLike: {
+            "kms:RequestAlias": "alias/aws/s3",
+          },
+        },
+      }),
+    );
 
     this.database = new rds.DatabaseCluster(this, "DatabaseCluster", {
       vpc,
