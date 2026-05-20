@@ -286,7 +286,7 @@ class TiedotusDatabaseStack extends cdk.Stack {
         resources: ["*"],
         conditions: {
           StringLike: {
-            "kms:RequestAlias": "alias/aws/s3",
+            "kms:RequestAlias": "alias/export-key",
           },
         },
       }),
