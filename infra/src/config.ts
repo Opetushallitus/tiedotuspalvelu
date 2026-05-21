@@ -11,7 +11,10 @@ export type Config = {
   opintopolkuHost: string;
   virkailijaHost: string;
   tiedotuspalveluCapacity: AutoScalingLimits;
-  oppijanumerorekisteriExportBucket: string;
+  oppijanumerorekisteri: {
+    exportBucket: string;
+    exportKeyArn: string;
+  };
   features: {
     vtj: boolean;
     "tiedotuspalvelu.fetch-oppija.enabled": boolean;
@@ -62,8 +65,12 @@ export const hahtuva: Config = {
   tiedotuspalveluDomain: "hahtuva.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "hahtuvaopintopolku.fi",
   virkailijaHost: "virkailija.hahtuvaopintopolku.fi",
-  oppijanumerorekisteriExportBucket:
-    "oppijanumerorekisteridatabase-exportbucket4e99310e-fg1jtjhmw1ak",
+  oppijanumerorekisteri: {
+    exportBucket:
+      "oppijanumerorekisteridatabase-exportbucket4e99310e-fg1jtjhmw1ak",
+    exportKeyArn:
+      "arn:aws:kms:eu-west-1:471112979851:key/1db3b719-53c6-4ecc-9249-08303b661684",
+  },
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -81,8 +88,12 @@ export const dev: Config = {
   tiedotuspalveluDomain: "dev.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "untuvaopintopolku.fi",
   virkailijaHost: "virkailija.untuvaopintopolku.fi",
-  oppijanumerorekisteriExportBucket:
-    "oppijanumerorekisteridatabase-exportbucket4e99310e-lwgbft1l0xt9",
+  oppijanumerorekisteri: {
+    exportBucket:
+      "oppijanumerorekisteridatabase-exportbucket4e99310e-lwgbft1l0xt9",
+    exportKeyArn:
+      "arn:aws:kms:eu-west-1:058264235340:key/94f73e93-be42-460c-b543-11ae6576cc88",
+  },
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -100,8 +111,12 @@ export const qa: Config = {
   tiedotuspalveluDomain: "qa.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "testiopintopolku.fi",
   virkailijaHost: "virkailija.testiopintopolku.fi",
-  oppijanumerorekisteriExportBucket:
-    "oppijanumerorekisteridatabase-exportbucket4e99310e-jvyilz0imgsj",
+  oppijanumerorekisteri: {
+    exportBucket:
+      "oppijanumerorekisteridatabase-exportbucket4e99310e-jvyilz0imgsj",
+    exportKeyArn:
+      "arn:aws:kms:eu-west-1:730335317715:key/685b53ef-f9e6-44b4-9bcf-d03f3acaa950",
+  },
   features: {
     vtj: false,
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -119,8 +134,12 @@ export const prod: Config = {
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
-  oppijanumerorekisteriExportBucket:
-    "oppijanumerorekisteridatabase-exportbucket4e99310e-ycy54wagxhzo",
+  oppijanumerorekisteri: {
+    exportBucket:
+      "oppijanumerorekisteridatabase-exportbucket4e99310e-ycy54wagxhzo",
+    exportKeyArn:
+      "arn:aws:kms:eu-west-1:767397734142:key/ca376a09-004c-434d-89c0-81cb0aaaa2e8",
+  },
   features: {
     ...defaultConfig.features,
   },

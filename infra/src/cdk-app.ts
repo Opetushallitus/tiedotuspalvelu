@@ -267,14 +267,16 @@ class TiedotusDatabaseStack extends cdk.Stack {
       new iam.PolicyStatement({
         actions: ["s3:GetObject"],
         resources: [
-          `arn:aws:s3:::${config.oppijanumerorekisteriExportBucket}/fulldump/henkilo/v1/*`,
+          `arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}/fulldump/henkilo/v1/*`,
         ],
       }),
     );
     s3ImportRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ["s3:ListBucket"],
-        resources: [`arn:aws:s3:::${config.oppijanumerorekisteriExportBucket}`],
+        resources: [
+          `arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}`,
+        ],
         conditions: {
           StringLike: { "s3:prefix": ["fulldump/henkilo/v1/*"] },
         },
@@ -282,13 +284,9 @@ class TiedotusDatabaseStack extends cdk.Stack {
     );
     s3ImportRole.addToPolicy(
       new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
         actions: ["kms:Decrypt"],
-        resources: ["*"],
-        conditions: {
-          StringLike: {
-            "kms:RequestAlias": "alias/export-key",
-          },
-        },
+        resources: [config.oppijanumerorekisteri.exportKeyArn],
       }),
     );
 
@@ -411,7 +409,7 @@ class TiedotuspalveluStack extends cdk.Stack {
         "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": `${config.features["tiedotuspalvelu.fetch-kielitutkintotodistus.enabled"]}`,
         "tiedotuspalvelu.henkilo-import.enabled": `${config.features["tiedotuspalvelu.henkilo-import.enabled"]}`,
         "tiedotuspalvelu.henkilo-import.bucket-name":
-          config.oppijanumerorekisteriExportBucket,
+          config.oppijanumerorekisteri.exportBucket,
         "tiedotuspalvelu.koski-role-arn": koskiRoleArn,
         "tiedotuspalvelu.suomifi-viestit.posti.contact-email":
           ssm.StringParameter.valueForStringParameter(
@@ -531,7 +529,7 @@ class TiedotuspalveluStack extends cdk.Stack {
       new iam.PolicyStatement({
         actions: ["s3:GetObject"],
         resources: [
-          `arn:aws:s3:::${config.oppijanumerorekisteriExportBucket}/fulldump/henkilo/v1/*`,
+          `arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}/fulldump/henkilo/v1/*`,
         ],
       }),
     );
