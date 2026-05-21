@@ -263,32 +263,7 @@ class TiedotusDatabaseStack extends cdk.Stack {
     const s3ImportRole = new iam.Role(this, "DbS3ImportRole", {
       assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
     });
-    s3ImportRole.addToPolicy(
-      new iam.PolicyStatement({
-        actions: ["s3:GetObject"],
-        resources: [
-          `arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}/fulldump/henkilo/v1/*`,
-        ],
-      }),
-    );
-    s3ImportRole.addToPolicy(
-      new iam.PolicyStatement({
-        actions: ["s3:ListBucket"],
-        resources: [
-          `arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}`,
-        ],
-        conditions: {
-          StringLike: { "s3:prefix": ["fulldump/henkilo/v1/*"] },
-        },
-      }),
-    );
-    s3ImportRole.addToPolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ["kms:Decrypt"],
-        resources: [config.oppijanumerorekisteri.exportKeyArn],
-      }),
-    );
+    grantOppijanumerorekisteriExportRead(s3ImportRole);
 
     this.database = new rds.DatabaseCluster(this, "DatabaseCluster", {
       vpc,
@@ -525,14 +500,7 @@ class TiedotuspalveluStack extends cdk.Stack {
       }),
     );
 
-    taskDefinition.addToTaskRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["s3:GetObject"],
-        resources: [
-          `arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}/fulldump/henkilo/v1/*`,
-        ],
-      }),
-    );
+    grantOppijanumerorekisteriExportRead(taskDefinition.taskRole);
 
     const service = new ecs.FargateService(this, "Service", {
       cluster: props.ecsCluster,
@@ -846,6 +814,31 @@ class OutgoingRequestMonitoring extends constructs.Construct {
       });
     });
   }
+}
+
+function grantOppijanumerorekisteriExportRead(grantee: iam.IGrantable): void {
+  [
+    new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["s3:GetObject"],
+      resources: [
+        `arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}/fulldump/henkilo/v1/*`,
+      ],
+    }),
+    new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["s3:ListBucket"],
+      resources: [`arn:aws:s3:::${config.oppijanumerorekisteri.exportBucket}`],
+      conditions: {
+        StringLike: { "s3:prefix": ["fulldump/henkilo/v1/*"] },
+      },
+    }),
+    new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["kms:Decrypt"],
+      resources: [config.oppijanumerorekisteri.exportKeyArn],
+    }),
+  ].forEach((policy) => grantee.grantPrincipal.addToPrincipalPolicy(policy));
 }
 
 const app = new CdkApp({
