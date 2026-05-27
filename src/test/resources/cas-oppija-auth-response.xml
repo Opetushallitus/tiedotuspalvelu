@@ -1,0 +1,10 @@
+<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
+    <cas:authenticationSuccess>
+        <cas:user>oppijan käyttäjätunnus</cas:user>
+        <cas:attributes>
+            <cas:oidHenkilo>1.2.246.562.98.19783284870</cas:oidHenkilo>
+            <cas:kayttajaTyyppi>OPPIJA</cas:kayttajaTyyppi>
+            <cas:idpEntityId>usernamePassword</cas:idpEntityId>
+        </cas:attributes>
+    </cas:authenticationSuccess>
+</cas:serviceResponse>

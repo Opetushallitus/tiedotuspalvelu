@@ -1,6 +1,7 @@
 package fi.vm.sade;
 
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasOppijaUserDetailsService;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasVirkailijaUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -32,7 +33,12 @@ public class RequestCallerFilter extends GenericFilterBean {
               .or(
                   () ->
                       getUserDetails(servletRequest)
-                          .flatMap(userDetails -> userDetails.getHenkiloOid()));
+                          .flatMap(userDetails -> userDetails.getHenkiloOid()))
+              .or(
+                  () ->
+                      getVirkailijaUserDetails(servletRequest)
+                          .flatMap(
+                              CasVirkailijaUserDetailsService.CasAuthenticatedUser::getOidHenkilo));
       callerOid.ifPresent(
           oid -> {
             MDC.put(CALLER_HENKILO_OID_ATTRIBUTE, oid);
@@ -59,6 +65,19 @@ public class RequestCallerFilter extends GenericFilterBean {
       if (request.getUserPrincipal() instanceof CasAuthenticationToken token) {
         if (token.getUserDetails()
             instanceof CasOppijaUserDetailsService.CasAuthenticatedUser casUserDetails) {
+          return Optional.of(casUserDetails);
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  private Optional<CasVirkailijaUserDetailsService.CasAuthenticatedUser> getVirkailijaUserDetails(
+      ServletRequest servletRequest) {
+    if (servletRequest instanceof HttpServletRequest request) {
+      if (request.getUserPrincipal() instanceof CasAuthenticationToken token) {
+        if (token.getUserDetails()
+            instanceof CasVirkailijaUserDetailsService.CasAuthenticatedUser casUserDetails) {
           return Optional.of(casUserDetails);
         }
       }

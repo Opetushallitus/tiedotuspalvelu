@@ -1,0 +1,12 @@
+<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
+    <cas:authenticationSuccess>
+        <cas:user>virkalijan käyttäjätunnus</cas:user>
+        <cas:attributes>
+            <cas:oidHenkilo>1.2.246.562.98.1234567890</cas:oidHenkilo>
+            <cas:kayttajaTyyppi>VIRKAILIJA</cas:kayttajaTyyppi>
+            <cas:idpEntityId>usernamePassword</cas:idpEntityId>
+            <cas:roles>APP_OPPIJANUMEROREKISTERI_REKISTERINPITAJA</cas:roles>
+            <cas:roles>APP_OPPIJANUMEROREKISTERI_REKISTERINPITAJA_1.2.246.562.10.00000000001</cas:roles>
+        </cas:attributes>
+    </cas:authenticationSuccess>
+</cas:serviceResponse>
