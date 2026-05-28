@@ -1,7 +1,6 @@
 package fi.vm.sade;
 
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasOppijaUserDetailsService;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasVirkailijaUserDetailsService;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.UserDetailsWithHenkiloOid;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -31,17 +30,11 @@ public class RequestCallerFilter extends GenericFilterBean {
       var callerOidFromJwtToken =
           getJwtToken(servletRequest).map(token -> token.getToken().getSubject());
 
-      var callerOidFromCasOppijaUser =
-          getUserDetails(servletRequest)
-              .flatMap(CasOppijaUserDetailsService.CasAuthenticatedUser::getHenkiloOid);
-
-      var callerOidFromCasVirkailijaUser =
-          getVirkailijaUserDetails(servletRequest)
-              .flatMap(CasVirkailijaUserDetailsService.CasAuthenticatedUser::getOidHenkilo);
+      var callerOidFromCasUser =
+          getUserDetails(servletRequest).flatMap(UserDetailsWithHenkiloOid::getHenkiloOid);
 
       var callerOid =
-          Stream.of(
-                  callerOidFromJwtToken, callerOidFromCasOppijaUser, callerOidFromCasVirkailijaUser)
+          Stream.of(callerOidFromJwtToken, callerOidFromCasUser)
               .flatMap(Optional::stream)
               .findFirst();
 
@@ -65,25 +58,10 @@ public class RequestCallerFilter extends GenericFilterBean {
     return Optional.empty();
   }
 
-  private Optional<CasOppijaUserDetailsService.CasAuthenticatedUser> getUserDetails(
-      ServletRequest servletRequest) {
+  private Optional<UserDetailsWithHenkiloOid> getUserDetails(ServletRequest servletRequest) {
     if (servletRequest instanceof HttpServletRequest request) {
       if (request.getUserPrincipal() instanceof CasAuthenticationToken token) {
-        if (token.getUserDetails()
-            instanceof CasOppijaUserDetailsService.CasAuthenticatedUser casUserDetails) {
-          return Optional.of(casUserDetails);
-        }
-      }
-    }
-    return Optional.empty();
-  }
-
-  private Optional<CasVirkailijaUserDetailsService.CasAuthenticatedUser> getVirkailijaUserDetails(
-      ServletRequest servletRequest) {
-    if (servletRequest instanceof HttpServletRequest request) {
-      if (request.getUserPrincipal() instanceof CasAuthenticationToken token) {
-        if (token.getUserDetails()
-            instanceof CasVirkailijaUserDetailsService.CasAuthenticatedUser casUserDetails) {
+        if (token.getUserDetails() instanceof UserDetailsWithHenkiloOid casUserDetails) {
           return Optional.of(casUserDetails);
         }
       }

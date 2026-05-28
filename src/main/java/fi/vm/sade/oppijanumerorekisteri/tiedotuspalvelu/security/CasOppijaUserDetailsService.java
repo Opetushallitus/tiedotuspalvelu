@@ -44,7 +44,7 @@ public class CasOppijaUserDetailsService
   }
 
   @Builder
-  public static final class CasAuthenticatedUser implements UserDetails {
+  public static final class CasAuthenticatedUser implements UserDetailsWithHenkiloOid {
     @Serial private static final long serialVersionUID = 1233976289493556161L;
 
     private final String username;
@@ -55,6 +55,7 @@ public class CasOppijaUserDetailsService
       this.attributes = attributes;
     }
 
+    @Override
     public Optional<String> getHenkiloOid() {
       return attributes.getOrDefault(ATTRIBUTE_OPPIJANUMERO, List.of()).stream().findFirst();
     }

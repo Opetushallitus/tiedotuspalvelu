@@ -48,7 +48,7 @@ public class CasVirkailijaUserDetailsService
   }
 
   @Builder
-  public static final class CasAuthenticatedUser implements UserDetails {
+  public static final class CasAuthenticatedUser implements UserDetailsWithHenkiloOid {
     @Serial private static final long serialVersionUID = 1L;
 
     private final String username;
@@ -69,7 +69,8 @@ public class CasVirkailijaUserDetailsService
       return attributes.getOrDefault(ATTRIBUTE_DISPLAY_NAME, List.of()).stream().findFirst();
     }
 
-    public Optional<String> getOidHenkilo() {
+    @Override
+    public Optional<String> getHenkiloOid() {
       return attributes.getOrDefault(ATTRIBUTE_OID_HENKILO, List.of()).stream().findFirst();
     }
 
