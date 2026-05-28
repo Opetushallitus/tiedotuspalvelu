@@ -9,6 +9,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.security.cas.authentication.CasAuthenticationToken;
@@ -27,18 +28,23 @@ public class RequestCallerFilter extends GenericFilterBean {
       ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
       throws IOException, ServletException {
     try {
+      var callerOidFromJwtToken =
+          getJwtToken(servletRequest).map(token -> token.getToken().getSubject());
+
+      var callerOidFromCasOppijaUser =
+          getUserDetails(servletRequest)
+              .flatMap(CasOppijaUserDetailsService.CasAuthenticatedUser::getHenkiloOid);
+
+      var callerOidFromCasVirkailijaUser =
+          getVirkailijaUserDetails(servletRequest)
+              .flatMap(CasVirkailijaUserDetailsService.CasAuthenticatedUser::getOidHenkilo);
+
       var callerOid =
-          getJwtToken(servletRequest)
-              .map(token -> token.getToken().getSubject())
-              .or(
-                  () ->
-                      getUserDetails(servletRequest)
-                          .flatMap(userDetails -> userDetails.getHenkiloOid()))
-              .or(
-                  () ->
-                      getVirkailijaUserDetails(servletRequest)
-                          .flatMap(
-                              CasVirkailijaUserDetailsService.CasAuthenticatedUser::getOidHenkilo));
+          Stream.of(
+                  callerOidFromJwtToken, callerOidFromCasOppijaUser, callerOidFromCasVirkailijaUser)
+              .flatMap(Optional::stream)
+              .findFirst();
+
       callerOid.ifPresent(
           oid -> {
             MDC.put(CALLER_HENKILO_OID_ATTRIBUTE, oid);
