@@ -2,9 +2,16 @@
     <cas:authenticationSuccess>
         <cas:user>oppijan käyttäjätunnus</cas:user>
         <cas:attributes>
-            <cas:oidHenkilo>1.2.246.562.98.19783284870</cas:oidHenkilo>
-            <cas:kayttajaTyyppi>OPPIJA</cas:kayttajaTyyppi>
+            <cas:personOid>1.2.246.562.98.19783284870</cas:personOid>
+            <cas:nationalIdentificationNumber>041157-998B</cas:nationalIdentificationNumber>
             <cas:idpEntityId>usernamePassword</cas:idpEntityId>
+            <cas:firstName>Hellin</cas:firstName>
+            <cas:familyName>Sevillantes</cas:familyName>
+            <cas:displayName>Hellin</cas:displayName>
+            <cas:VakinainenKotimainenLahiosoitePostinumero>65100</cas:VakinainenKotimainenLahiosoitePostinumero>
+            <cas:VakinainenUlkomainenLahiosoite>Klemetinkatu 9 A 2</cas:VakinainenUlkomainenLahiosoite>
+            <cas:VakinainenKotimainenLahiosoitePostitoimipaikkaR>VAASA
+            </cas:VakinainenKotimainenLahiosoitePostitoimipaikkaR>
         </cas:attributes>
     </cas:authenticationSuccess>
 </cas:serviceResponse>
