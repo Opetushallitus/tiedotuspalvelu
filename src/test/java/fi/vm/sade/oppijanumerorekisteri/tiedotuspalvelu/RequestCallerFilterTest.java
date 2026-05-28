@@ -83,9 +83,63 @@ public class RequestCallerFilterTest extends TiedotuspalveluApiTest implements R
   @Test
   public void logsCallerHenkiloOidWhenCallerAuthenticatedWithCasOppija(CapturedOutput output)
       throws IOException, InterruptedException {
-    var cookie = getOppijaCookie();
     var ticket = "ST-30-JVB-gESc2Yc3S-zV25JOHbVEeBo-ip-10-0-55-20";
-    createWiremockStubsForOppija(ticket, cookie);
+    var cookie = getCookie("/cas-oppija");
+    // Stub cas-oppija endpoints
+    wireMock.stubFor(
+        get(urlEqualTo(
+                "/login?service="
+                    + URLEncoder.encode(
+                        "http://localhost:8080/omat-viestit", StandardCharsets.UTF_8)))
+            .willReturn(
+                aResponse()
+                    .withStatus(302)
+                    .withHeader(
+                        "Location",
+                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check?ticket="
+                            + ticket)
+                    .withHeader("Set-Cookie", cookie.toString())));
+    wireMock.stubFor(
+        post(urlEqualTo(
+                "/login?service="
+                    + URLEncoder.encode(
+                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check",
+                        StandardCharsets.UTF_8)))
+            .willReturn(
+                aResponse()
+                    .withStatus(302)
+                    .withHeader(
+                        "Location",
+                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check?ticket="
+                            + ticket)
+                    .withHeader("Set-Cookie", cookie.toString())));
+    wireMock.stubFor(
+        get(urlEqualTo(
+                "/login?service="
+                    + URLEncoder.encode(
+                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check",
+                        StandardCharsets.UTF_8)))
+            .willReturn(
+                aResponse()
+                    .withStatus(302)
+                    .withHeader(
+                        "Location",
+                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check?ticket="
+                            + ticket)
+                    .withHeader("Set-Cookie", cookie.toString())));
+    // validate ticket, provide cas response
+    wireMock.stubFor(
+        get(urlEqualTo(
+                "/p3/serviceValidate?ticket=%s&service=%s"
+                    .formatted(
+                        ticket,
+                        URLEncoder.encode(
+                            "http://localhost:8080/omat-viestit/j_spring_cas_security_check",
+                            StandardCharsets.UTF_8))))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody(readResource("/cas-oppija-auth-response.xml"))));
 
     var client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
 
@@ -119,91 +173,18 @@ public class RequestCallerFilterTest extends TiedotuspalveluApiTest implements R
     assertThat(output).contains("\"callerHenkiloOid\": \"1.2.246.562.98.19783284870\"");
   }
 
-  private Cookie getOppijaCookie() {
+  private Cookie getCookie(String path) {
     var tgc = "TGC=asd";
-    var cookiePath = "/cas-oppija";
     return new Cookie(
-        cookiePath,
-        tgc,
-        "SameSite=none",
-        "SameSite=None",
-        "Secure",
-        "HttpOnly",
-        "Path=/cas-oppija");
+        path, tgc, "SameSite=none", "SameSite=None", "Secure", "HttpOnly", "Path=" + path);
   }
 
-  private void createWiremockStubsForOppija(String ticketId, Cookie cookie) {
-    wireMock.stubFor(
-        get(urlEqualTo(
-                "/login?service="
-                    + URLEncoder.encode(
-                        "http://localhost:8080/omat-viestit", StandardCharsets.UTF_8)))
-            .willReturn(
-                aResponse()
-                    .withStatus(302)
-                    .withHeader(
-                        "Location",
-                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check?ticket="
-                            + ticketId)
-                    .withHeader("Set-Cookie", cookie.toString())));
-
-    wireMock.stubFor(
-        post(urlEqualTo(
-                "/login?service="
-                    + URLEncoder.encode(
-                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check",
-                        StandardCharsets.UTF_8)))
-            .willReturn(
-                aResponse()
-                    .withStatus(302)
-                    .withHeader(
-                        "Location",
-                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check?ticket="
-                            + ticketId)
-                    .withHeader("Set-Cookie", cookie.toString())));
-    wireMock.stubFor(
-        get(urlEqualTo(
-                "/login?service="
-                    + URLEncoder.encode(
-                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check",
-                        StandardCharsets.UTF_8)))
-            .willReturn(
-                aResponse()
-                    .withStatus(302)
-                    .withHeader(
-                        "Location",
-                        "http://localhost:8080/omat-viestit/j_spring_cas_security_check?ticket="
-                            + ticketId)
-                    .withHeader("Set-Cookie", cookie.toString())));
-    // validate, provide cas response
-    wireMock.stubFor(
-        get(urlEqualTo(
-                "/p3/serviceValidate?ticket=%s&service=%s"
-                    .formatted(
-                        ticketId,
-                        URLEncoder.encode(
-                            "http://localhost:8080/omat-viestit/j_spring_cas_security_check",
-                            StandardCharsets.UTF_8))))
-            .willReturn(
-                aResponse()
-                    .withStatus(200)
-                    .withBody(readResource("/cas-oppija-auth-response.xml"))));
-  }
-
-  private Cookie getCookie() {
-    var tgc = "TGC=asd";
-    var cookiePath = "/cas-virkailija";
-    return new Cookie(
-        cookiePath,
-        tgc,
-        "SameSite=none",
-        "SameSite=None",
-        "Secure",
-        "HttpOnly",
-        "Path=/cas-virkailija");
-  }
-
-  private void createWiremockStubs(Cookie cookie, String ticketId) {
+  @Test
+  public void logsCallerHenkiloOidWhenCallerAuthenticatedWithCasVirkailija(CapturedOutput output)
+      throws Exception {
+    var cookie = getCookie("/cas-virkailija");
+    var ticket = "ST-30-JVB-gESc2Yc3S-zV25JOHbVEeBo-ip-10-0-55-20";
+    // Stub cas-virkailija endpoints
     wireMock.stubFor(
         get(urlEqualTo(
                 "/login?service="
@@ -215,9 +196,8 @@ public class RequestCallerFilterTest extends TiedotuspalveluApiTest implements R
                     .withHeader(
                         "Location",
                         "http://localhost:8080/tiedotuspalvelu/j_spring_cas_security_check?ticket="
-                            + ticketId)
+                            + ticket)
                     .withHeader("Set-Cookie", cookie.toString())));
-
     wireMock.stubFor(
         post(urlEqualTo(
                 "/login?service="
@@ -230,7 +210,7 @@ public class RequestCallerFilterTest extends TiedotuspalveluApiTest implements R
                     .withHeader(
                         "Location",
                         "http://localhost:8080/tiedotuspalvelu/j_spring_cas_security_check?ticket="
-                            + ticketId)
+                            + ticket)
                     .withHeader("Set-Cookie", cookie.toString())));
     wireMock.stubFor(
         get(urlEqualTo(
@@ -244,14 +224,14 @@ public class RequestCallerFilterTest extends TiedotuspalveluApiTest implements R
                     .withHeader(
                         "Location",
                         "http://localhost:8080/tiedotuspalvelu/j_spring_cas_security_check?ticket="
-                            + ticketId)
+                            + ticket)
                     .withHeader("Set-Cookie", cookie.toString())));
-    // validate, provide cas response
+    // validate ticket, provide cas response
     wireMock.stubFor(
         get(urlEqualTo(
                 "/p3/serviceValidate?ticket=%s&service=%s"
                     .formatted(
-                        ticketId,
+                        ticket,
                         URLEncoder.encode(
                             "http://localhost:8080/tiedotuspalvelu/j_spring_cas_security_check",
                             StandardCharsets.UTF_8))))
@@ -259,14 +239,6 @@ public class RequestCallerFilterTest extends TiedotuspalveluApiTest implements R
                 aResponse()
                     .withStatus(200)
                     .withBody(readResource("/cas-virkailija-auth-response.xml"))));
-  }
-
-  @Test
-  public void logsCallerHenkiloOidWhenCallerAuthenticatedWithCasVirkailija(CapturedOutput output)
-      throws Exception {
-    var cookie = getCookie();
-    var ticket = "ST-30-JVB-gESc2Yc3S-zV25JOHbVEeBo-ip-10-0-55-20";
-    createWiremockStubs(cookie, ticket);
 
     var client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
 
