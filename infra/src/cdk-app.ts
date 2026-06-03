@@ -211,6 +211,7 @@ class VpcStack extends cdk.Stack {
     return new ec2.BastionHostLinux(this, "Bastion", {
       vpc: this.vpc,
       instanceName: "Bastion",
+      requireImdsv2: true,
     });
   }
 
