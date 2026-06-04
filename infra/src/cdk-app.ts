@@ -201,22 +201,9 @@ class VpcStack extends cdk.Stack {
       natGateways: 3,
       natGatewayProvider: natProvider,
     });
-    const s3Endpoint = vpc.addGatewayEndpoint("S3Endpoint", {
+    vpc.addGatewayEndpoint("S3Endpoint", {
       service: ec2.GatewayVpcEndpointAwsService.S3,
     });
-    s3Endpoint.addToPolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        principals: [new iam.AnyPrincipal()],
-        actions: ["*"],
-        resources: ["*"],
-        conditions: {
-          StringEquals: {
-            "aws:PrincipalAccount": cdk.Aws.ACCOUNT_ID,
-          },
-        },
-      }),
-    );
     return vpc;
   }
 
