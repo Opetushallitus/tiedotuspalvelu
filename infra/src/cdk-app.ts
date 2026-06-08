@@ -554,43 +554,41 @@ class TiedotuspalveluStack extends cdk.Stack {
         new route53_targets.LoadBalancerTarget(alb),
       ),
     });
-    if (config.dnsDelegated) {
-      const certificate = new certificatemanager.Certificate(
-        this,
-        "Certificate",
-        {
-          domainName: config.tiedotuspalveluDomain,
-          subjectAlternativeNames: [subdomainForVirkailijaNginxForwarding],
-          validation: certificatemanager.CertificateValidation.fromDns(
-            props.hostedZone,
-          ),
-        },
-      );
-      const listener = alb.addListener("Listener", {
-        protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
-        port: 443,
-        open: true,
-        certificates: [certificate],
-      });
-      const target = listener.addTargets("ServiceTarget", {
-        port: appPort,
-        targets: [service],
-        healthCheck: {
-          enabled: true,
-          interval: cdk.Duration.seconds(30),
-          path: "/omat-viestit/actuator/health",
-          port: appPort.toString(),
-        },
-      });
-      new ResponseAlarms(this, "ResponseAlarms", {
-        prefix: "Tiedotuspalvelu",
-        alarmTopic: props.alarmTopic,
-        alb,
-        albThreshold: 1,
-        target,
-        targetThreshold: 1,
-      });
-    }
+    const certificate = new certificatemanager.Certificate(
+      this,
+      "Certificate",
+      {
+        domainName: config.tiedotuspalveluDomain,
+        subjectAlternativeNames: [subdomainForVirkailijaNginxForwarding],
+        validation: certificatemanager.CertificateValidation.fromDns(
+          props.hostedZone,
+        ),
+      },
+    );
+    const listener = alb.addListener("Listener", {
+      protocol: elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+      port: 443,
+      open: true,
+      certificates: [certificate],
+    });
+    const target = listener.addTargets("ServiceTarget", {
+      port: appPort,
+      targets: [service],
+      healthCheck: {
+        enabled: true,
+        interval: cdk.Duration.seconds(30),
+        path: "/omat-viestit/actuator/health",
+        port: appPort.toString(),
+      },
+    });
+    new ResponseAlarms(this, "ResponseAlarms", {
+      prefix: "Tiedotuspalvelu",
+      alarmTopic: props.alarmTopic,
+      alb,
+      albThreshold: 1,
+      target,
+      targetThreshold: 1,
+    });
   }
 
   validateTiedoteAlarm(logGroup: logs.LogGroup, alarmTopic: sns.ITopic) {
