@@ -16,7 +16,6 @@ export type Config = {
     exportKeyArn: string;
   };
   features: {
-    vtj: boolean;
     "tiedotuspalvelu.fetch-oppija.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.base-url": string;
@@ -27,12 +26,9 @@ export type Config = {
 
 const defaultConfig = {
   dnsDelegated: true,
-  tiedotuspalveluCapacity: { min: 0, max: 0 },
+  tiedotuspalveluCapacity: { min: 2, max: 4 },
   features: {
-    vtj: true,
-    "tiedotuspalvelu.fetch-oppija.enabled": false,
-    "tiedotuspalvelu.suomifi-viestit.enabled": false,
-    "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
+    "tiedotuspalvelu.fetch-oppija.enabled": true,
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
     "tiedotuspalvelu.henkilo-import.enabled": true,
   },
@@ -61,7 +57,6 @@ export function getConfig(): Config {
 export const hahtuva: Config = {
   ...defaultConfig,
   dnsDelegated: true,
-  tiedotuspalveluCapacity: { min: 2, max: 4 },
   tiedotuspalveluDomain: "hahtuva.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "hahtuvaopintopolku.fi",
   virkailijaHost: "virkailija.hahtuvaopintopolku.fi",
@@ -72,19 +67,16 @@ export const hahtuva: Config = {
       "arn:aws:kms:eu-west-1:471112979851:key/1db3b719-53c6-4ecc-9249-08303b661684",
   },
   features: {
-    vtj: false,
-    "tiedotuspalvelu.fetch-oppija.enabled": true,
+    ...defaultConfig.features,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": false,
-    "tiedotuspalvelu.henkilo-import.enabled": true,
   },
 };
 
 export const dev: Config = {
   ...defaultConfig,
   dnsDelegated: true,
-  tiedotuspalveluCapacity: { min: 2, max: 4 },
   tiedotuspalveluDomain: "dev.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "untuvaopintopolku.fi",
   virkailijaHost: "virkailija.untuvaopintopolku.fi",
@@ -95,19 +87,15 @@ export const dev: Config = {
       "arn:aws:kms:eu-west-1:058264235340:key/94f73e93-be42-460c-b543-11ae6576cc88",
   },
   features: {
-    vtj: false,
-    "tiedotuspalvelu.fetch-oppija.enabled": true,
+    ...defaultConfig.features,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
-    "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
-    "tiedotuspalvelu.henkilo-import.enabled": true,
   },
 };
 
 export const qa: Config = {
   ...defaultConfig,
   dnsDelegated: true,
-  tiedotuspalveluCapacity: { min: 2, max: 4 },
   tiedotuspalveluDomain: "qa.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "testiopintopolku.fi",
   virkailijaHost: "virkailija.testiopintopolku.fi",
@@ -118,19 +106,17 @@ export const qa: Config = {
       "arn:aws:kms:eu-west-1:730335317715:key/685b53ef-f9e6-44b4-9bcf-d03f3acaa950",
   },
   features: {
-    vtj: false,
-    "tiedotuspalvelu.fetch-oppija.enabled": true,
+    ...defaultConfig.features,
     "tiedotuspalvelu.suomifi-viestit.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.base-url":
       "https://api.messages-qa.suomi.fi",
-    "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
-    "tiedotuspalvelu.henkilo-import.enabled": true,
   },
 };
 
 export const prod: Config = {
   ...defaultConfig,
   dnsDelegated: true,
+  tiedotuspalveluCapacity: { min: 0, max: 0 },
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
@@ -142,5 +128,7 @@ export const prod: Config = {
   },
   features: {
     ...defaultConfig.features,
+    "tiedotuspalvelu.suomifi-viestit.enabled": false,
+    "tiedotuspalvelu.suomifi-viestit.base-url": "https://api.messages.suomi.fi",
   },
 };
