@@ -40,9 +40,6 @@ public class Tiedote {
   @Column(nullable = false)
   private String oppijanumero;
 
-  @Column(nullable = true)
-  private String todistusUrl;
-
   @Column(name = "todistusbucketname", nullable = true)
   private String todistusBucketName;
 
