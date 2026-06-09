@@ -91,7 +91,7 @@ public class VirkailijaUiController {
                               v.name as "Vastaanottaja",
                               concat(v.street_address, ' ', v.zip_code, ' ', v.city, ' ', v.country_code)
                                   as "Vastaanottajan osoite",
-                              coalesce((v.processed_at at time zone 'Europe/Helsinki')::text, concat('Ei välitetty; yritetty ', coalesce(v.retry_count, 0), ' kertaa'))
+                              coalesce((v.processed_at at time zone 'Europe/Helsinki')::text, concat('Ei välitetty; yritetty ', t.retry_count, ' kertaa'))
                                   as "Viesti välitetty Suomi.fi-viestit palveluun",
                               v.otsikko as "Viestin otsikko",
                               v.sisalto as "Viestin sisältö"
