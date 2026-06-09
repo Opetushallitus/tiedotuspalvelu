@@ -2,17 +2,17 @@
   {
     "key": "OMAT_VIESTIT_EI_TIEDOTTEITA",
     "locale": "en",
-    "value": "You have no messages. You will only see messages on this tab, if an electronic Suomi.fi Message has been sent to you from My Studyinfo."
+    "value": "You have no messages. You will only see messages on this tab, if an electronic Suomi.fi Message has been sent to you from My Studyinfo.\n\n[Read more](https://opintopolku.fi)"
   },
   {
     "key": "OMAT_VIESTIT_EI_TIEDOTTEITA",
     "locale": "fi",
-    "value": "Sinulle ei ole viestejä. Näet viestejä tällä välilehdellä vain siinä tapauksessa, jos Oma Opintopolusta on lähetetty sinulle sähköinen Suomi.fi-viesti. "
+    "value": "Sinulle ei ole viestejä. Näet viestejä tällä välilehdellä vain siinä tapauksessa, jos Oma Opintopolusta on lähetetty sinulle sähköinen Suomi.fi-viesti.\n\n[Lue lisää](https://opintopolku.fi)"
   },
   {
     "key": "OMAT_VIESTIT_EI_TIEDOTTEITA",
     "locale": "sv",
-    "value": "Du har inga meddelanden. Du kommer endast att se meddelanden på den här fliken om ett elektroniskt Suomi.fi-meddelande har skickats till dig från Min Studieinfo."
+    "value": "Du har inga meddelanden. Du kommer endast att se meddelanden på den här fliken om ett elektroniskt Suomi.fi-meddelande har skickats till dig från Min Studieinfo.\n\n[Läs mer](https://opintopolku.fi)"
   },
   {
     "key": "OMAT_VIESTIT_KIELITUTKINTOTODISTUS_LINKKI",
