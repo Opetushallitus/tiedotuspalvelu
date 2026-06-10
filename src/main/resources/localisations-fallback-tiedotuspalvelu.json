@@ -1,5 +1,30 @@
 [
   {
+    "key": "TIEDOTE_LKM",
+    "locale": "fi",
+    "value": "Lukumäärä"
+  },
+  {
+    "key": "TIEDOTE_LKM",
+    "locale": "sv",
+    "value": "Antal"
+  },
+  {
+    "key": "TIEDOTE_LKM_JUMISSA",
+    "locale": "fi",
+    "value": "...joista mahdollisesti jumissa"
+  },
+  {
+    "key": "TIEDOTE_LKM_RETRY",
+    "locale": "fi",
+    "value": "...joista uudelleenyritettävänä"
+  },
+  {
+    "key": "TIEDOTTEEN_TILA",
+    "locale": "fi",
+    "value": "Tiedotteen tila"
+  },
+  {
     "key": "TIEDOTUSPALVELU_LATAA_CSV",
     "locale": "fi",
     "value": "Lataa kaikki tiedotteet CSV:nä"
@@ -8,5 +33,25 @@
     "key": "TIEDOTUSPALVELU_OTSIKKO",
     "locale": "fi",
     "value": "Tiedotuspalvelu"
+  },
+  {
+    "key": "TIEDOTUSPALVELU_TILASTOJA_OTSIKKO",
+    "locale": "fi",
+    "value": "Tilastoja tiedotteista"
+  },
+  {
+    "key": "TILAN_KUVAUS",
+    "locale": "en",
+    "value": "Description"
+  },
+  {
+    "key": "TILAN_KUVAUS",
+    "locale": "fi",
+    "value": "Kuvaus"
+  },
+  {
+    "key": "TILAN_KUVAUS",
+    "locale": "sv",
+    "value": "Beskrivning"
   }
 ]
