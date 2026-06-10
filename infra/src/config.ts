@@ -121,7 +121,7 @@ export const prod: Config = {
   },
   features: {
     ...defaultConfig.features,
-    "tiedotuspalvelu.suomifi-viestit.enabled": false,
+    "tiedotuspalvelu.suomifi-viestit.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.base-url": "https://api.messages.suomi.fi",
   },
 };
