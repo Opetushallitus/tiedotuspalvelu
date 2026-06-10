@@ -110,7 +110,6 @@ export const qa: Config = {
 
 export const prod: Config = {
   ...defaultConfig,
-  tiedotuspalveluCapacity: { min: 0, max: 0 },
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
