@@ -12,10 +12,18 @@ test("Omat-viestit - tyhjän tilan teksti renderöidään markdownina", async ({
   await page.getByRole("button", { name: "Nordea Demo (210281-9988)" }).click();
 
   const tiedoteSection = page.getByLabel("Viestit");
-  await expect(tiedoteSection).toContainText("Sinulle ei ole viestejä");
+  await expect(tiedoteSection).toContainText("Sinulle ei ole uusia viestejä");
 
-  // Markdown-linkki renderöityy <a>-elementiksi, ei raakana [Lue lisää](...) -tekstinä
-  const lueLisaa = tiedoteSection.getByRole("link", { name: "Lue lisää" });
-  await expect(lueLisaa).toBeVisible();
-  await expect(lueLisaa).toHaveAttribute("href", "https://opintopolku.fi");
+  const linkit = tiedoteSection.getByRole("link", {
+    name: "Viestini Oma Opintopolussa",
+  });
+  await expect(linkit).toHaveCount(2);
+  await expect(linkit.first()).toHaveAttribute(
+    "href",
+    "https://opintopolku.fi/konfo/fi/sivu/oma-opintopolku#viestini",
+  );
+  await expect(linkit.nth(1)).toHaveAttribute(
+    "href",
+    "https://www.oph.fi/fi/palvelut/viestini-oma-opintopolussa",
+  );
 });
