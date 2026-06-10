@@ -2,12 +2,29 @@
 set -o errexit -o nounset -o pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
+source "${repo}/scripts/lib/common-functions.sh"
 
-cd "$repo/infra"
-npx prettier . --write
+function main {
+  run_prettier_format
+  run_java_format
+}
 
-cd "$repo"
-./mvnw -q fmt:format
+function run_prettier_format {
+  cd "$repo/infra"
+  init_nodejs
+  npm_ci_if_needed
+  npx prettier . --write
 
-cd "$repo/web"
-npx prettier . --write
+  cd "$repo/web"
+  init_nodejs
+  npm_ci_if_needed
+  npx prettier . --write
+}
+
+function run_java_format {
+  cd "$repo"
+  select_java_version 21
+  ./mvnw -q fmt:format
+}
+
+main "$@"
