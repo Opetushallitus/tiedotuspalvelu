@@ -463,6 +463,35 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
             "java.lang.IllegalStateException: Suomi.fi viestit message call failed with status 409");
   }
 
+  @Test
+  public void handlesMailboxNotInUseExceptionAndSendsTiedoteToFetchKielitutkintoPdf()
+      throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    var mailboxNotInUseResponseBody =
+        """
+    {
+      "reason": "a reason?",
+      "validationErrors": [
+        {
+          "error": "some kind of error?",
+          "errorCode": "MAILBOX_NOT_IN_USE",
+        }
+      ]
+    }
+    """;
+    wireMock.stubFor(
+        post(urlEqualTo("/v2/messages/electronic"))
+            .willReturn(aResponse().withStatus(400).withBody(mailboxNotInUseResponseBody)));
+
+    var tiedote = createTiedoteAndRunTask();
+
+    assertThat(tiedote.getState()).isEqualTo(Tiedote.STATE_KIELITUTKINTOTODISTUKSEN_NOUTO);
+    assertThat(tiedote.getRetryCount()).isEqualTo(0);
+    assertThat(tiedote.getNextRetry()).isNull();
+    assertThat(tiedote.getViesti().getMessageType())
+        .isEqualTo(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
+  }
+
   private void stubGettingSuomiFiViestitAccessToken() {
     wireMock.stubFor(
         post(urlEqualTo("/v1/token"))
