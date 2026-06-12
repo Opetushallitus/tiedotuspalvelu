@@ -6,10 +6,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.ResourceReader;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.Tiedote;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedotuspalveluApiTest;
-import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedotuspalveluProperties;
+import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -21,6 +18,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
@@ -30,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implements ResourceReader {
 
   @Autowired private SendSuomiFiViestitTask sendSuomiFiViestitTask;
+
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   @RegisterExtension
   static WireMockExtension wireMock =
@@ -41,6 +41,7 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
   private static final String SUOMIFI_TOKEN = UUID.randomUUID().toString();
   private static final String SUOMIFI_MESSAGE_ID = UUID.randomUUID().toString();
   @Autowired private TiedotuspalveluProperties tiedotuspalveluProperties;
+
 
   @DynamicPropertySource
   static void registerProperties(DynamicPropertyRegistry registry) {
@@ -490,6 +491,161 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
     assertThat(tiedote.getNextRetry()).isNull();
     assertThat(tiedote.getViesti().getMessageType())
         .isEqualTo(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
+  }
+
+  @Test
+  public void forfeitsTiedoteAfterExceedingForfeitLimit(CapturedOutput output) throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    var tooOldCreated = OffsetDateTime.now().minusDays(7);
+
+    var electronicTiedoteUuid = UUID.randomUUID();
+    var electronicTiedoteOid = OidGenerator.generateHenkiloOid();
+    var nextRetry = OffsetDateTime.now();
+    var retryCount = 2;
+    var electronicTiedoteIdempotencyKey = "%s-initial".formatted(electronicTiedoteOid);
+
+    var sql =
+        """
+      INSERT INTO tiedote (id, oppijanumero, created, updated, next_retry, retry_count, idempotency_key, tiedotetype_id,
+                           tiedotestate_id, opiskeluoikeus_oid, todistusbucketname, todistusobjectkey, todistuskieli,
+                           todistuskieli_koodisto_uri, kitu_katuosoite, kitu_postinumero, kitu_postitoimipaikka, maakoodi,
+                           maa_koodisto_uri)
+      VALUES (?, ?, ?, now(), ?, ?, ?, ?, ?, '[uupuu]', 'koski-tiedotuspalvelu-qa',
+              '17bb85b1-ef09-4b0f-91ba-9e2d5368bd02/tiedote.pdf', 'FI', 'kieli', 'Testikuja 55', '40100', 'Testilä', 'FIN',
+              'maatjavaltiot1')
+    """;
+
+    jdbcTemplate.update(
+        sql,
+        electronicTiedoteUuid,
+        electronicTiedoteOid,
+        tooOldCreated,
+        nextRetry,
+        retryCount,
+        electronicTiedoteIdempotencyKey,
+        Tiedote.TYPE_KIELITUTKINTOTODISTUS,
+        Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
+
+    var paperMailTiedoteUuid = UUID.randomUUID();
+    var paperMailTiedoteOid = OidGenerator.generateHenkiloOid();
+    var paperMailTiedoteIdempotencyKey = "%s-initial".formatted(paperMailTiedoteOid);
+
+    jdbcTemplate.update(
+        sql,
+        paperMailTiedoteUuid,
+        paperMailTiedoteOid,
+        tooOldCreated,
+        nextRetry,
+        retryCount,
+        paperMailTiedoteIdempotencyKey,
+        Tiedote.TYPE_KIELITUTKINTOTODISTUS,
+        Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS_PAPERIPOSTIOPTIOLLA);
+
+    var electronicTiedoteBeforeExecution =
+        tiedoteRepository.findById(electronicTiedoteUuid).orElseThrow();
+    assertThat(electronicTiedoteBeforeExecution.isForfeited()).isFalse();
+    var paperMailTiedoteBeforeExecution =
+        tiedoteRepository.findById(paperMailTiedoteUuid).orElseThrow();
+    assertThat(paperMailTiedoteBeforeExecution.isForfeited()).isFalse();
+
+    sendSuomiFiViestitTask.execute();
+
+    var electronicTiedote = tiedoteRepository.findById(electronicTiedoteUuid).orElseThrow();
+    assertThat(electronicTiedote.isForfeited()).isTrue();
+    Assertions.assertThat(output)
+        .contains(
+            "Tiedote %s is older than 7 days, forfeiting, ending processing"
+                .formatted(electronicTiedoteUuid));
+
+    var paperMailTiedote = tiedoteRepository.findById(paperMailTiedoteUuid).orElseThrow();
+    assertThat(paperMailTiedote.isForfeited()).isTrue();
+    Assertions.assertThat(output)
+        .contains(
+            "Tiedote %s is older than 7 days, forfeiting, ending processing"
+                .formatted(paperMailTiedoteUuid));
+  }
+
+  @Test
+  public void doesNotProcessTooOldTiedoteThatHasAlreadyBeenForfeited(CapturedOutput output) {
+    var sql =
+        """
+          INSERT INTO tiedote (id, oppijanumero, created, updated, next_retry, retry_count, idempotency_key, tiedotetype_id,
+                               tiedotestate_id, opiskeluoikeus_oid, todistusbucketname, todistusobjectkey, todistuskieli,
+                               todistuskieli_koodisto_uri, kitu_katuosoite, kitu_postinumero, kitu_postitoimipaikka, maakoodi,
+                               maa_koodisto_uri, forfeited)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '[uupuu]', 'koski-tiedotuspalvelu-qa',
+                  '17bb85b1-ef09-4b0f-91ba-9e2d5368bd02/tiedote.pdf', 'FI', 'kieli', 'Testikuja 55', '40100', 'Testilä', 'FIN',
+                  'maatjavaltiot1', true)
+        """;
+    var uuid = UUID.randomUUID();
+    var oid = OidGenerator.generateHenkiloOid();
+    var idempotencyKey = "%s-initial".formatted(oid);
+    var updated = OffsetDateTime.now().minusHours(1);
+    var nextRetry = OffsetDateTime.now();
+
+    jdbcTemplate.update(
+        sql,
+        uuid,
+        oid,
+        OffsetDateTime.now().minusDays(7),
+        updated,
+        nextRetry,
+        2,
+        idempotencyKey,
+        Tiedote.TYPE_KIELITUTKINTOTODISTUS,
+        Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
+
+    var beforeExecution = tiedoteRepository.findById(uuid).orElseThrow();
+    assertThat(beforeExecution.isForfeited()).isTrue();
+    assertThat(beforeExecution.getUpdated()).isEqualTo(updated);
+
+    sendSuomiFiViestitTask.execute();
+
+    var afterExecution = tiedoteRepository.findById(uuid).orElseThrow();
+    assertThat(afterExecution.isForfeited()).isTrue();
+    assertThat(afterExecution.getUpdated()).isEqualTo(updated);
+
+    Assertions.assertThat(output)
+        .doesNotContain(
+            "Tiedote %s is older than 7 days, forfeiting, ending processing".formatted(uuid));
+  }
+
+  @Test
+  public void doesNotProcessTiedoteThatIsForfeited() throws Exception {
+    stubGettingSuomiFiViestitAccessToken();
+    var sql =
+        """
+              INSERT INTO tiedote (id, oppijanumero, created, updated, next_retry, retry_count, idempotency_key, tiedotetype_id,
+                                   tiedotestate_id, opiskeluoikeus_oid, todistusbucketname, todistusobjectkey, todistuskieli,
+                                   todistuskieli_koodisto_uri, kitu_katuosoite, kitu_postinumero, kitu_postitoimipaikka, maakoodi,
+                                   maa_koodisto_uri, forfeited)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '[uupuu]', 'koski-tiedotuspalvelu-qa',
+                      '17bb85b1-ef09-4b0f-91ba-9e2d5368bd02/tiedote.pdf', 'FI', 'kieli', 'Testikuja 55', '40100', 'Testilä', 'FIN',
+                      'maatjavaltiot1', true)
+            """;
+    var uuid = UUID.randomUUID();
+    var oid = OidGenerator.generateHenkiloOid();
+    var idempotencyKey = "%s-initial".formatted(oid);
+    var created = OffsetDateTime.now().minusHours(1).minusSeconds(30);
+    var updated = OffsetDateTime.now().minusHours(1);
+    var nextRetry = OffsetDateTime.now();
+    jdbcTemplate.update(
+        sql,
+        uuid,
+        oid,
+        created,
+        updated,
+        nextRetry,
+        0,
+        idempotencyKey,
+        Tiedote.TYPE_KIELITUTKINTOTODISTUS,
+        Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
+
+    sendSuomiFiViestitTask.execute();
+
+    var tiedote = tiedoteRepository.findById(uuid).orElseThrow();
+
+    assertThat(tiedote.getUpdated()).isEqualTo(updated);
   }
 
   private void stubGettingSuomiFiViestitAccessToken() {
