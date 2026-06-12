@@ -95,6 +95,9 @@ public class Tiedote {
   @Column(name = "maa_koodisto_uri", nullable = true)
   private String maaKoodistoUri;
 
+  @Column(nullable = false)
+  private boolean forfeited;
+
   @OneToOne(
       mappedBy = "tiedote",
       cascade = CascadeType.ALL,
@@ -107,5 +110,10 @@ public class Tiedote {
       return DEFAULT_TODISTUSKIELI;
     }
     return this.todistuskieli;
+  }
+
+  public void resetRetries() {
+    this.setRetryCount(0);
+    this.setNextRetry(null);
   }
 }
