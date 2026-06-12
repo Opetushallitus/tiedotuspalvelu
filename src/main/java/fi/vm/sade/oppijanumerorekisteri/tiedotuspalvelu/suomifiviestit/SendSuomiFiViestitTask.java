@@ -64,8 +64,7 @@ public class SendSuomiFiViestitTask extends TiedoteProcessingTask {
       transactionTemplate.executeWithoutResult(
           status -> {
             tiedote.setState(Tiedote.STATE_KIELITUTKINTOTODISTUKSEN_NOUTO);
-            tiedote.setRetryCount(0);
-            tiedote.setNextRetry(null);
+            tiedote.resetRetries();
             viesti.setMessageType(SuomiFiViesti.SUOMI_FI_VIESTI_MESSAGE_TYPE_PAPER_MAIL);
             tiedoteRepository.save(tiedote);
           });
