@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.postgresql.PGConnection;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class VirkailijaUiController {
   private final JdbcTemplate jdbcTemplate;
   private final LocalisationRepository localisationRepository;
+
+  @Value("${tiedotuspalvelu.tiedote-forfeit-limit.days}")
+  private int tiedoteForfeitLimitDays;
 
   @GetMapping("/localisations")
   @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_RAPORTOINTI')")
@@ -48,7 +52,8 @@ public class VirkailijaUiController {
             SELECT s.tiedotestate_id, s.description,
                    COUNT(t.id) AS count,
                    COUNT(t.id) FILTER (WHERE t.retry_count > 0) AS retried_count,
-                   COUNT(t.id) FILTER (WHERE t.retry_count >= 3) AS retried_three_or_more
+                   COUNT(t.id) FILTER (WHERE t.retry_count >= 3) AS retried_three_or_more,
+                   COUNT(t.id) FILTER (WHERE t.forfeited IS TRUE) AS forfeited_count
             FROM tiedotestate s
             LEFT JOIN tiedote t ON t.tiedotestate_id = s.tiedotestate_id
             GROUP BY s.tiedotestate_id, s.description
@@ -60,8 +65,9 @@ public class VirkailijaUiController {
                     rs.getString("description"),
                     rs.getLong("count"),
                     rs.getLong("retried_count"),
-                    rs.getLong("retried_three_or_more")));
-    return new TiedoteSummary(stateCounts);
+                    rs.getLong("retried_three_or_more"),
+                    rs.getLong("forfeited_count")));
+    return new TiedoteSummary(stateCounts, tiedoteForfeitLimitDays);
   }
 
   @GetMapping("/tiedotteet/csv")
@@ -115,8 +121,13 @@ public class VirkailijaUiController {
 
   public record MeResponse(String nimi) {}
 
-  public record TiedoteSummary(List<StateCount> stateCounts) {}
+  public record TiedoteSummary(List<StateCount> stateCounts, int forfeitLimitDays) {}
 
   public record StateCount(
-      String state, String description, long count, long retriedCount, long retriedThreeOrMore) {}
+      String state,
+      String description,
+      long count,
+      long retriedCount,
+      long retriedThreeOrMore,
+      long forfeitedCount) {}
 }

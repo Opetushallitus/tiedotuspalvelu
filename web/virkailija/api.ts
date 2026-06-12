@@ -16,10 +16,12 @@ export type StateCount = {
   count: number;
   retriedCount: number;
   retriedThreeOrMore: number;
+  forfeitedCount: number;
 };
 
 export type TiedoteSummary = {
   stateCounts: StateCount[];
+  forfeitLimitDays: number;
 };
 
 export const api = createApi({

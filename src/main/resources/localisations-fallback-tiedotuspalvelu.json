@@ -20,6 +20,11 @@
     "value": "...joista uudelleenyritettävänä"
   },
   {
+    "key": "TIEDOTE_LKM_AIKAKATKAISTU_HYLATTY",
+    "locale": "fi",
+    "value": "...joista hylätty säädetyn aikakatkaisun takia"
+  },
+  {
     "key": "TIEDOTTEEN_TILA",
     "locale": "fi",
     "value": "Tiedotteen tila"

@@ -52,6 +52,10 @@ function TiedoteSummary() {
           <Cell>{t("TIEDOTE_LKM")}</Cell>
           <Cell>{t("TIEDOTE_LKM_RETRY")}</Cell>
           <Cell>{t("TIEDOTE_LKM_JUMISSA")}</Cell>
+          <Cell>
+            {t("TIEDOTE_LKM_AIKAKATKAISTU_HYLATTY")} ({data.forfeitLimitDays}{" "}
+            {t("DAYS")})
+          </Cell>
         </Row>
       </Header>
       <Body>
@@ -64,6 +68,7 @@ function TiedoteSummary() {
             <Cell>{formatNumber(sc.count)}</Cell>
             <Cell>{formatNumber(sc.retriedCount)}</Cell>
             <Cell>{formatNumber(sc.retriedThreeOrMore)}</Cell>
+            <Cell>{formatNumber(sc.forfeitedCount)}</Cell>
           </Row>
         ))}
       </Body>
