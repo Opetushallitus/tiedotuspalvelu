@@ -172,4 +172,13 @@ public class TiedotuspalveluApiTest {
                   "nationalIdentificationNumber", List.of("210281-9988"),
                   "personOid", List.of(OPPIJANUMERO_NORDEA_DEMO)))
           .build();
+  public final CasOppijaUserDetailsService.CasAuthenticatedUser SUOMIFI_TESTIHENKILO =
+      CasOppijaUserDetailsService.CasAuthenticatedUser.builder()
+          .username("suomi.fi,210281-9988")
+          .attributes(
+              Map.of(
+                  "cn", List.of("Testihenkilö 150626;Testihenkilö 150626"),
+                  "nationalIdentificationNumber", List.of("150626A9318"),
+                  "personName", List.of("Testihenkilö 150626;Testihenkilö 150626")))
+          .build();
 }

@@ -64,4 +64,30 @@ public class UiControllerTest extends TiedotuspalveluApiTest {
     assertEquals(t2.getId(), tiedotteet[1].id());
     assertEquals(t1.getId(), tiedotteet[2].id());
   }
+
+  @Test
+  public void returnsMeForNormalSuomiFi() throws Exception {
+    var response =
+        mockMvc
+            .perform(get("/omat-viestit/ui/me").with(user(OPPIJA_NORDEA_DEMO)))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    UiController.MeResponse me = objectMapper.readValue(response, UiController.MeResponse.class);
+    assertEquals("Nordea Demo", me.nimi());
+  }
+
+  @Test
+  public void returnsMeFor() throws Exception {
+    var response =
+        mockMvc
+            .perform(get("/omat-viestit/ui/me").with(user(SUOMIFI_TESTIHENKILO)))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    UiController.MeResponse me = objectMapper.readValue(response, UiController.MeResponse.class);
+    assertEquals("Testihenkilö", me.nimi());
+  }
 }

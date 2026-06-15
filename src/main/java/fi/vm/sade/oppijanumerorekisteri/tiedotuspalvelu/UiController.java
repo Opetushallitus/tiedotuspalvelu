@@ -55,8 +55,11 @@ public class UiController {
   public MeResponse me() {
     var auth = SecurityContextHolder.getContext().getAuthentication();
     var principal = (CasOppijaUserDetailsService.CasAuthenticatedUser) auth.getPrincipal();
-    var attributes = principal.getAttributes();
-    return new MeResponse(attributes.get(ATTRIBUTE_KOKO_NIMI).get(0));
+    var kokoNimiAttributes = principal.getAttributes().get(ATTRIBUTE_KOKO_NIMI);
+    return new MeResponse(
+        kokoNimiAttributes != null && kokoNimiAttributes.size() > 0
+            ? kokoNimiAttributes.get(0)
+            : "Testihenkilö");
   }
 
   public record MeResponse(String nimi) {}
