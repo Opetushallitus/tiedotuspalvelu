@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.*;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.function.Consumer;
 import org.assertj.core.api.Assertions;
@@ -579,8 +580,12 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
     var uuid = UUID.randomUUID();
     var oid = OidGenerator.generateHenkiloOid();
     var idempotencyKey = "%s-initial".formatted(oid);
-    var updated = OffsetDateTime.now().minusHours(1);
+    // For some reason when running tests in pipeline the last 3 digits of a timestamp are lost,
+    // which makes the comparison in the assertion fail. For that reason, the updated timestamp is
+    // truncated to microseconds here.
+    var updated = OffsetDateTime.now().minusHours(1).truncatedTo(ChronoUnit.MICROS);
     var nextRetry = OffsetDateTime.now();
+    var retryCount = 2;
 
     jdbcTemplate.update(
         sql,
@@ -589,7 +594,7 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
         OffsetDateTime.now().minusDays(7),
         updated,
         nextRetry,
-        2,
+        retryCount,
         idempotencyKey,
         Tiedote.TYPE_KIELITUTKINTOTODISTUS,
         Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
@@ -602,6 +607,8 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
 
     var afterExecution = tiedoteRepository.findById(uuid).orElseThrow();
     assertThat(afterExecution.isForfeited()).isTrue();
+    assertThat(afterExecution.getNextRetry()).isNotNull();
+    assertThat(afterExecution.getRetryCount()).isEqualTo(retryCount);
     assertThat(afterExecution.getUpdated()).isEqualTo(updated);
 
     Assertions.assertThat(output)
@@ -626,8 +633,12 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
     var oid = OidGenerator.generateHenkiloOid();
     var idempotencyKey = "%s-initial".formatted(oid);
     var created = OffsetDateTime.now().minusHours(1).minusSeconds(30);
-    var updated = OffsetDateTime.now().minusHours(1);
+    // For some reason when running tests in pipeline the last 3 digits of a timestamp are lost,
+    // which makes the comparison in the assertion fail. For that reason, the updated timestamp is
+    // truncated to microseconds here.
+    var updated = OffsetDateTime.now().minusHours(1).truncatedTo(ChronoUnit.MICROS);
     var nextRetry = OffsetDateTime.now();
+    var retryCount = 2;
     jdbcTemplate.update(
         sql,
         uuid,
@@ -635,7 +646,7 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
         created,
         updated,
         nextRetry,
-        0,
+        retryCount,
         idempotencyKey,
         Tiedote.TYPE_KIELITUTKINTOTODISTUS,
         Tiedote.STATE_SUOMIFI_VIESTIN_LÄHETYS);
@@ -644,6 +655,8 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
 
     var tiedote = tiedoteRepository.findById(uuid).orElseThrow();
 
+    assertThat(tiedote.getNextRetry()).isNotNull();
+    assertThat(tiedote.getRetryCount()).isEqualTo(retryCount);
     assertThat(tiedote.getUpdated()).isEqualTo(updated);
   }
 
