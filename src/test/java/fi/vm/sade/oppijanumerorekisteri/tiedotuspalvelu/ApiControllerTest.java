@@ -115,6 +115,15 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   }
 
   @Test
+  public void createTiedoteWithMalformedJsonReturnsErrorResponse() throws Exception {
+    performAuthorizedPostRequest("{ \"oppijanumero\": ")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Malformed request body"))
+        .andExpect(jsonPath("$.validationErrors").isArray())
+        .andExpect(jsonPath("$.validationErrors").isEmpty());
+  }
+
+  @Test
   public void createTiedoteWithSameIdempotencyKeyReturnsSameId() throws Exception {
     String idempotencyKey = UUID.randomUUID().toString();
     var json = tiedoteJson(idempotencyKey, "fi");
