@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,11 +31,16 @@ public class CountryCodeConverter {
     A3_TO_A2 = Map.copyOf(m);
   }
 
+  @NonNull
   public static String alpha3ToAlpha2(String alpha3) {
     if (alpha3 == null) {
-      log.warn("Attempted to convert a null string to a ISO 3166-1 A-2 country code");
-      return null;
+      throw new IllegalArgumentException("alpha3 country code cannot be null");
     }
-    return A3_TO_A2.get(alpha3);
+    var code = A3_TO_A2.get(alpha3);
+    if (code == null) {
+      throw new IllegalArgumentException(
+          "alpha3 country code \"%s\" not found in Locale.getISOCountries()".formatted(alpha3));
+    }
+    return code;
   }
 }

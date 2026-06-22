@@ -2,12 +2,11 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-@ExtendWith(OutputCaptureExtension.class)
 public class CountryCodeConverterTest {
 
   @Test
@@ -21,9 +20,21 @@ public class CountryCodeConverterTest {
   }
 
   @Test
-  public void logsWarningIfAttemptingToConvertNull(CapturedOutput output) {
-    assertThat(CountryCodeConverter.alpha3ToAlpha2(null)).isNull();
-    assertThat(output)
-        .containsPattern("Attempted to convert a null string to a ISO 3166-1 A-2 country code");
+  public void throwsIfAttemptingToConvertNull() {
+    var exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> CountryCodeConverter.alpha3ToAlpha2(null));
+    assertThat(exception.getMessage()).isEqualTo("alpha3 country code cannot be null");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"XXX", "123", "EAX", "   "})
+  public void throwsIfAttemptingToConvertNonExistentCountry(String countryCode) {
+    var exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> CountryCodeConverter.alpha3ToAlpha2(countryCode));
+    assertThat(exception.getMessage())
+        .isEqualTo(
+            "alpha3 country code \"" + countryCode + "\" not found in Locale.getISOCountries()");
   }
 }
