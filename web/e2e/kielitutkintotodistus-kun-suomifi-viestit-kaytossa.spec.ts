@@ -58,6 +58,7 @@ test("Kielitutkintotodistus - Suomi.fi-viestit käytössä", async ({
       "Tiedotteen käsittelyn tila tiedotuspalvelussa":
         "TIEDOTTEEN_JA_OPPIJAN_VALIDOINTI",
       "Kielitutkintotodistuksen S3 URL": `s3://bucket/${todistusUuid}/todistus.pdf`,
+      "Tiedotteen käsittely lopetettu aikakatkaisun takia": "false",
     });
     await runValidateTiedoteTask(request);
     expect(
