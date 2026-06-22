@@ -18,21 +18,19 @@ function main {
   tmux select-pane -t 0
   tmux send-keys "docker compose down --volumes; docker compose up --force-recreate --renew-anon-volumes" C-m
 
-  tmux select-pane -t 0
   tmux splitw -v
   tmux send-keys "$repo/scripts/run-tiedotuspalvelu-ui.sh" C-m
 
-  tmux select-pane -t 0
   tmux splitw -v
   tmux send-keys "$repo/scripts/run-omat-viestit-ui.sh" C-m
 
-  tmux select-pane -t 0
   tmux splitw -v
   tmux send-keys "$repo/scripts/run-tiedotuspalvelu.sh" C-m
 
   open "http://localhost:8086/omat-viestit/"
   open "http://localhost:8087/tiedotuspalvelu/"
 
+  tmux select-layout tiled
   tmux attach-session -t "$session"
 }
 
