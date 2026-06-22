@@ -4,6 +4,9 @@ import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.Tiedote;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedoteRepository;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.HenkiloRepository;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SuomiFiViestitEventRepository;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
@@ -45,6 +48,10 @@ public class ApiController {
 
   @PostMapping("/tiedote/kielitutkintotodistus")
   @PreAuthorize("hasRole('APP_TIEDOTUSPALVELU_KIELITUTKINTOTODISTUS_TIEDOTE_CRUD')")
+  @ApiResponse(
+      responseCode = "400",
+      description = "Pyynnön validointi epäonnistui",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @Transactional
   public TiedoteResponse createTiedote(@RequestBody @Valid TiedoteDto tiedoteDto) {
     var existingTiedote = tiedoteRepository.findByIdempotencyKey(tiedoteDto.idempotencyKey());

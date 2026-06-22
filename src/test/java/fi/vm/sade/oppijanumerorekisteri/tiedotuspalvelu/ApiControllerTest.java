@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 public class ApiControllerTest extends TiedotuspalveluApiTest {
@@ -96,15 +97,21 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   public void createTiedoteFailsWhenFieldsAreMissing() throws Exception {
     performAuthorizedPostRequest(
             """
-                   { "oppijanumero": "1.2.246.562.99.12345678901" }
-                   """)
-        .andExpect(status().isBadRequest());
+        { "oppijanumero": "1.2.246.562.99.12345678901" }
+        """)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("idempotencyKey", "must not be blank"))
+        .andExpect(validationError("kituExamineeDetails", "must not be null"));
 
     performAuthorizedPostRequest(
             """
-                   { "idempotencyKey": "some-key" }
-                   """)
-        .andExpect(status().isBadRequest());
+          { "idempotencyKey": "some-key" }
+          """)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("oppijanumero", "must not be blank"))
+        .andExpect(validationError("kituExamineeDetails", "must not be null"));
   }
 
   @Test
@@ -162,14 +169,24 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
                 }
                 """
             .formatted(OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey);
-    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails", "must not be null"));
   }
 
   @Test
   public void createTiedoteWithEmptyKituExamineeDetailsReturnsBadRequest() throws Exception {
     var kituExamineeDetails = "{}";
     var body = createBodyWithKituExamineeDetails(kituExamineeDetails);
-    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.katuosoite", "must not be blank"))
+        .andExpect(validationError("kituExamineeDetails.postinumero", "must not be blank"))
+        .andExpect(validationError("kituExamineeDetails.postitoimipaikka", "must not be blank"))
+        .andExpect(validationError("kituExamineeDetails.maa", "must not be null"))
+        .andExpect(validationError("kituExamineeDetails.todistuskieli", "must not be null"));
   }
 
   @Test
@@ -202,7 +219,10 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
       }
     """;
     var body = createBodyWithKituExamineeDetails(kituExamineeDetailsJson);
-    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.todistuskieli", "must not be null"));
   }
 
   @Test
@@ -221,7 +241,13 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
           }
         """;
     var body = createBodyWithKituExamineeDetails(kituExamineeDetailsJson);
-    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodiarvo", "must not be blank"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodistoUri", "must not be blank"));
   }
 
   @Test
@@ -245,17 +271,27 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
     var nullTodistuskieliKoodiarvoBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("null"));
-    performAuthorizedPostRequest(nullTodistuskieliKoodiarvoBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(nullTodistuskieliKoodiarvoBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodiarvo", "must not be blank"));
 
     var emptyTodistuskieliKoodiarvoBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"\""));
     performAuthorizedPostRequest(emptyTodistuskieliKoodiarvoBody)
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodiarvo", "must not be blank"));
 
     var trimmedEmptyTodistuskieliKoodiarvoBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"   \""));
     performAuthorizedPostRequest(trimmedEmptyTodistuskieliKoodiarvoBody)
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodiarvo", "must not be blank"));
   }
 
   @Test
@@ -279,15 +315,27 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
     var nullKoodistoUriBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("null"));
-    performAuthorizedPostRequest(nullKoodistoUriBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(nullKoodistoUriBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodistoUri", "must not be blank"));
 
     var emptyKoodistoUriBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"\""));
-    performAuthorizedPostRequest(emptyKoodistoUriBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyKoodistoUriBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodistoUri", "must not be blank"));
 
     var trimmableEmptyKoodistoUriBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"     \""));
-    performAuthorizedPostRequest(trimmableEmptyKoodistoUriBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(trimmableEmptyKoodistoUriBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(
+            validationError("kituExamineeDetails.todistuskieli.koodistoUri", "must not be blank"));
   }
 
   @Test
@@ -310,22 +358,34 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
     """;
 
     var noKatuosoiteBody = createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted(""));
-    performAuthorizedPostRequest(noKatuosoiteBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(noKatuosoiteBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.katuosoite", "must not be blank"));
 
     var nullKatuosoiteBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"katuosoite\": null,"));
-    performAuthorizedPostRequest(nullKatuosoiteBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(nullKatuosoiteBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.katuosoite", "must not be blank"));
 
     var emptyKatuosoiteBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"katuosoite\": \"\","));
-    performAuthorizedPostRequest(emptyKatuosoiteBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyKatuosoiteBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.katuosoite", "must not be blank"));
 
     var emptyTrimmableKatuosoiteBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"katuosoite\": \"    \","));
-    performAuthorizedPostRequest(emptyTrimmableKatuosoiteBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyTrimmableKatuosoiteBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.katuosoite", "must not be blank"));
   }
 
   @Test
@@ -349,22 +409,34 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
     var noPostinumeroBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted(""));
-    performAuthorizedPostRequest(noPostinumeroBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(noPostinumeroBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postinumero", "must not be blank"));
 
     var nullPostinumeroBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"postinumero\": null,"));
-    performAuthorizedPostRequest(nullPostinumeroBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(nullPostinumeroBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postinumero", "must not be blank"));
 
     var emptyPostinumeroBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"postinumero\": \"\","));
-    performAuthorizedPostRequest(emptyPostinumeroBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyPostinumeroBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postinumero", "must not be blank"));
 
     var emptyTrimmablePostinumeroBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"postinumero\": \"    \","));
-    performAuthorizedPostRequest(emptyTrimmablePostinumeroBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyTrimmablePostinumeroBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postinumero", "must not be blank"));
   }
 
   @Test
@@ -388,23 +460,34 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
     var noPostitoimipaikkaBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted(""));
-    performAuthorizedPostRequest(noPostitoimipaikkaBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(noPostitoimipaikkaBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postitoimipaikka", "must not be blank"));
 
     var nullPostitoimipaikkaBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"postitoimipaikka\": null,"));
-    performAuthorizedPostRequest(nullPostitoimipaikkaBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(nullPostitoimipaikkaBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postitoimipaikka", "must not be blank"));
 
     var emptyPostitoimipaikkaBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"postitoimipaikka\": \"\","));
-    performAuthorizedPostRequest(emptyPostitoimipaikkaBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyPostitoimipaikkaBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postitoimipaikka", "must not be blank"));
 
     var emptyTrimmablePostitoimipaikkaBody =
         createBodyWithKituExamineeDetails(
             kituExamineeDetailsJson.formatted("\"postitoimipaikka\": \"    \","));
     performAuthorizedPostRequest(emptyTrimmablePostitoimipaikkaBody)
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.postitoimipaikka", "must not be blank"));
   }
 
   @Test
@@ -423,7 +506,10 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
           }
         """;
     var body = createBodyWithKituExamineeDetails(kituExamineeDetailsJson);
-    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa", "must not be null"));
   }
 
   @Test
@@ -442,7 +528,11 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
               }
             """;
     var body = createBodyWithKituExamineeDetails(kituExamineeDetailsJson);
-    performAuthorizedPostRequest(body).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodiarvo", "must not be blank"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodistoUri", "must not be blank"));
   }
 
   @Test
@@ -466,15 +556,24 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
     var nullKoodiarvoBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("null"));
-    performAuthorizedPostRequest(nullKoodiarvoBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(nullKoodiarvoBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodiarvo", "must not be blank"));
 
     var emptyKoodiarvoBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"\""));
-    performAuthorizedPostRequest(emptyKoodiarvoBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyKoodiarvoBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodiarvo", "must not be blank"));
 
     var trimmableEmptyKoodiarvoBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"     \""));
-    performAuthorizedPostRequest(trimmableEmptyKoodiarvoBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(trimmableEmptyKoodiarvoBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodiarvo", "must not be blank"));
   }
 
   @Test
@@ -498,15 +597,24 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
 
     var nullKoodistoUriBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("null"));
-    performAuthorizedPostRequest(nullKoodistoUriBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(nullKoodistoUriBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodistoUri", "must not be blank"));
 
     var emptyKoodistoUriBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"\""));
-    performAuthorizedPostRequest(emptyKoodistoUriBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(emptyKoodistoUriBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodistoUri", "must not be blank"));
 
     var trimmableEmptyKoodistoUriBody =
         createBodyWithKituExamineeDetails(kituExamineeDetailsJson.formatted("\"     \""));
-    performAuthorizedPostRequest(trimmableEmptyKoodistoUriBody).andExpect(status().isBadRequest());
+    performAuthorizedPostRequest(trimmableEmptyKoodistoUriBody)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("kituExamineeDetails.maa.koodistoUri", "must not be blank"));
   }
 
   private String createBodyWithKituExamineeDetails(String kituExamineeDetailsJson) {
@@ -580,6 +688,12 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
         """
         .formatted(
             OPPIJANUMERO, OPISKELUOIKEUS_OID, idempotencyKey, idempotencyKey, kituExamineeDetails);
+  }
+
+  private ResultMatcher validationError(String field, String error) {
+    return jsonPath(
+            "$.validationErrors[?(@.field == '%s' && @.error == '%s')]".formatted(field, error))
+        .exists();
   }
 
   private @NonNull ResultActions performAuthorizedPostRequest(String content) throws Exception {
