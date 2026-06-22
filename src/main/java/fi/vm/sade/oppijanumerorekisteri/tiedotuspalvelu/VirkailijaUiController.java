@@ -91,6 +91,7 @@ public class VirkailijaUiController {
                               t.oppijanumero as "Tiedotteen vastaanottajan oppijanumero",
                               t.opiskeluoikeus_oid as "Tiedotteeseen littyvän opiskeluoikeuden OID",
                               t.tiedotestate_id as "Tiedotteen käsittelyn tila tiedotuspalvelussa",
+                              t.forfeited::text as "Tiedotteen käsittely lopetettu aikakatkaisun takia",
                               concat('s3://', t.todistusbucketname, '/', t.todistusobjectkey) as "Kielitutkintotodistuksen S3 URL",
                               v.message_id as "Viestin ID",
                               v.message_type as "Viestin tyyppi",

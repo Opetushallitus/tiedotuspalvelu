@@ -42,7 +42,6 @@ public class SendSuomiFiViestitTaskTest extends TiedotuspalveluApiTest implement
   private static final String SUOMIFI_MESSAGE_ID = UUID.randomUUID().toString();
   @Autowired private TiedotuspalveluProperties tiedotuspalveluProperties;
 
-
   @DynamicPropertySource
   static void registerProperties(DynamicPropertyRegistry registry) {
     registry.add("tiedotuspalvelu.suomifi-viestit.base-url", wireMock::baseUrl);
