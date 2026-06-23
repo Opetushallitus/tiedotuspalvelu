@@ -124,6 +124,33 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
   }
 
   @Test
+  public void createTiedoteWithUnknownOppijanumeroReturnsValidationError() throws Exception {
+    var idempotencyKey = UUID.randomUUID().toString();
+    var unknownOppijanumero = OidGenerator.generateHenkiloOid();
+    var body =
+        """
+        {
+          "oppijanumero": "%s",
+          "opiskeluoikeusOid": "%s",
+          "todistusBucket": "bucket",
+          "todistusKey": "%s/todistus.pdf",
+          "idempotencyKey": "%s",
+          "kituExamineeDetails": %s
+        }
+        """
+            .formatted(
+                unknownOppijanumero,
+                OPISKELUOIKEUS_OID,
+                idempotencyKey,
+                idempotencyKey,
+                kituExamineeDetailsJson("fi"));
+    performAuthorizedPostRequest(body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.reason").value("Validation failed"))
+        .andExpect(validationError("oppijanumero", "Tuntematon oppijanumero"));
+  }
+
+  @Test
   public void createTiedoteWithSameIdempotencyKeyReturnsSameId() throws Exception {
     String idempotencyKey = UUID.randomUUID().toString();
     var json = tiedoteJson(idempotencyKey, "fi");

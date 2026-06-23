@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/omat-viestit/api/v1")
@@ -60,8 +58,8 @@ public class ApiController {
     }
 
     if (!henkiloRepository.existsById(tiedoteDto.oppijanumero())) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Tuntematon oppijanumero: " + tiedoteDto.oppijanumero());
+      throw BadRequestException.validationError(
+          tiedoteDto, "oppijanumero", "Tuntematon oppijanumero");
     }
 
     var tiedote = TiedoteDtoMapper.toModel(tiedoteDto);

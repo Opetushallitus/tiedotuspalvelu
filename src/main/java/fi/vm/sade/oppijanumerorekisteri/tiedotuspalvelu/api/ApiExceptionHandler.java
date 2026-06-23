@@ -35,6 +35,12 @@ public class ApiExceptionHandler {
     return badRequest(new ErrorResponse("Malformed request body", List.of()));
   }
 
+  @ExceptionHandler(BadRequestException.class)
+  public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex) {
+    log.info("Rejected request body: {}", toJson(ex.getRequest()));
+    return badRequest(ex.getResponse());
+  }
+
   private ResponseEntity<ErrorResponse> badRequest(ErrorResponse errorResponse) {
     log.info("Responding with: {}", toJson(errorResponse));
     return ResponseEntity.badRequest().body(errorResponse);
