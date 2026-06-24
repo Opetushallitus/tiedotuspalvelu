@@ -18,6 +18,8 @@ public class CasOppijaUserDetailsService
   public static final String ATTRIBUTE_SUKUNIMI = "sn";
   public static final String ATTRIBUTE_HETU = "nationalIdentificationNumber";
   public static final String ATTRIBUTE_OPPIJANUMERO = "personOid";
+  public static final String ATTRIBUTE_EIDAS_ETUNIMI = "firstName";
+  public static final String ATTRIBUTE_EIDAS_SUKUNIMI = "familyName";
 
   private static final List<GrantedAuthority> DEFAULT_AUTHORITIES =
       List.of(new SimpleGrantedAuthority("ROLE_OPPIJA"));

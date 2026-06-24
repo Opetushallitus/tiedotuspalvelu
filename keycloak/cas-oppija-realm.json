@@ -76,6 +76,51 @@
             "user.attribute": "personOid",
             "claim.name": "personOid"
           }
+        },
+        {
+          "name": "firstName",
+          "protocol": "cas",
+          "protocolMapper": "cas-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "firstName",
+            "claim.name": "firstName"
+          }
+        },
+        {
+          "name": "familyName",
+          "protocol": "cas",
+          "protocolMapper": "cas-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "lastName",
+            "claim.name": "familyName"
+          }
+        },
+        {
+          "name": "personIdentifier",
+          "protocol": "cas",
+          "protocolMapper": "cas-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "personIdentifier",
+            "claim.name": "personIdentifier"
+          }
+        },
+        {
+          "name": "vtjVerified",
+          "protocol": "cas",
+          "protocolMapper": "cas-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "vtjVerified",
+            "claim.name": "vtjVerified"
+          }
+        },
+        {
+          "name": "dateOfBirth",
+          "protocol": "cas",
+          "protocolMapper": "cas-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "dateOfBirth",
+            "claim.name": "dateOfBirth"
+          }
         }
       ]
     }
@@ -154,14 +199,14 @@
         }
       ],
       "attributes": {
-        "displayName": [
-          "Leon Elias Germany"
+        "personIdentifier": [
+          "DE/FI/366193B0E55D436B494769486A9284D04E0A1DCFDBF8B9EDA63E5BF4C3CFE6F5"
         ],
-        "givenName": [
-          "Leon Elias"
+        "vtjVerified": [
+          "false"
         ],
-        "sn": [
-          "Germany"
+        "dateOfBirth": [
+          "1980-01-01"
         ],
         "personOid": [
           "1.2.246.562.24.92212175391"

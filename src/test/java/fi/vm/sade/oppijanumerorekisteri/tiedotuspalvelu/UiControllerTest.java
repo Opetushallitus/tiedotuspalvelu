@@ -90,4 +90,17 @@ public class UiControllerTest extends TiedotuspalveluApiTest {
     UiController.MeResponse me = objectMapper.readValue(response, UiController.MeResponse.class);
     assertEquals("Testihenkilö", me.nimi());
   }
+
+  @Test
+  public void returnsMeForEidas() throws Exception {
+    var response =
+        mockMvc
+            .perform(get("/omat-viestit/ui/me").with(user(EIDAS_HENKILO)))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    UiController.MeResponse me = objectMapper.readValue(response, UiController.MeResponse.class);
+    assertEquals("Leon Elias Germany", me.nimi());
+  }
 }

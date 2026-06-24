@@ -1,5 +1,7 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 
+import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasOppijaUserDetailsService.ATTRIBUTE_EIDAS_ETUNIMI;
+import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasOppijaUserDetailsService.ATTRIBUTE_EIDAS_SUKUNIMI;
 import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.security.CasOppijaUserDetailsService.ATTRIBUTE_KOKO_NIMI;
 
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.locale.LocalisationRepository;
@@ -55,11 +57,24 @@ public class UiController {
   public MeResponse me() {
     var auth = SecurityContextHolder.getContext().getAuthentication();
     var principal = (CasOppijaUserDetailsService.CasAuthenticatedUser) auth.getPrincipal();
-    var kokoNimiAttributes = principal.getAttributes().get(ATTRIBUTE_KOKO_NIMI);
-    return new MeResponse(
-        kokoNimiAttributes != null && kokoNimiAttributes.size() > 0
-            ? kokoNimiAttributes.get(0)
-            : "Testihenkilö");
+    return new MeResponse(resolveNimi(principal.getAttributes()));
+  }
+
+  private static String resolveNimi(Map<String, List<String>> attributes) {
+    var kokoNimi = firstAttribute(attributes, ATTRIBUTE_KOKO_NIMI);
+    if (kokoNimi.isPresent()) {
+      return kokoNimi.get();
+    }
+    var etunimi = firstAttribute(attributes, ATTRIBUTE_EIDAS_ETUNIMI);
+    var sukunimi = firstAttribute(attributes, ATTRIBUTE_EIDAS_SUKUNIMI);
+    if (etunimi.isPresent() && sukunimi.isPresent()) {
+      return etunimi.get() + " " + sukunimi.get();
+    }
+    return "Testihenkilö";
+  }
+
+  private static Optional<String> firstAttribute(Map<String, List<String>> attributes, String key) {
+    return attributes.getOrDefault(key, List.of()).stream().findFirst();
   }
 
   public record MeResponse(String nimi) {}

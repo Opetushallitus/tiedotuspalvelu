@@ -181,4 +181,21 @@ public class TiedotuspalveluApiTest {
                   "nationalIdentificationNumber", List.of("150626A9318"),
                   "personName", List.of("Testihenkilö 150626;Testihenkilö 150626")))
           .build();
+
+  public static final String OPPIJANUMERO_EIDAS = "1.2.246.562.24.92212175391";
+  public final CasOppijaUserDetailsService.CasAuthenticatedUser EIDAS_HENKILO =
+      CasOppijaUserDetailsService.CasAuthenticatedUser.builder()
+          .username(
+              "suomi.fi,DE/FI/366193B0E55D436B494769486A9284D04E0A1DCFDBF8B9EDA63E5BF4C3CFE6F5")
+          .attributes(
+              Map.of(
+                  "firstName", List.of("Leon Elias"),
+                  "familyName", List.of("Germany"),
+                  "vtjVerified", List.of("false"),
+                  "personIdentifier",
+                      List.of(
+                          "DE/FI/366193B0E55D436B494769486A9284D04E0A1DCFDBF8B9EDA63E5BF4C3CFE6F5"),
+                  "dateOfBirth", List.of("1980-01-01"),
+                  "personOid", List.of(OPPIJANUMERO_EIDAS)))
+          .build();
 }

@@ -12,6 +12,20 @@ export async function reset(request: APIRequestContext) {
   expect(response.ok()).toBeTruthy();
 }
 
+export async function proxyOppijaRaamit(page: Page) {
+  await page.route("**/oppija-raamit/**", async (route) => {
+    try {
+      const { pathname, search } = new URL(route.request().url());
+      const response = await route.fetch({
+        url: `https://testiopintopolku.fi${pathname}${search}`,
+      });
+      await route.fulfill({ response });
+    } catch {
+      await route.abort().catch(() => {});
+    }
+  });
+}
+
 export async function runValidateTiedoteTask(request: APIRequestContext) {
   const response = await request.post("/test/runValidateTiedoteTask");
   expect(response.ok()).toBeTruthy();
