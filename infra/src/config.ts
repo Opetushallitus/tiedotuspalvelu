@@ -20,6 +20,7 @@ export type Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url": string;
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": boolean;
     "tiedotuspalvelu.henkilo-import.enabled": boolean;
+    "tiedotuspalvelu.alb.tls13pq.enabled": boolean;
   };
 };
 
@@ -68,6 +69,7 @@ export const hahtuva: Config = {
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": false,
+    "tiedotuspalvelu.alb.tls13pq.enabled": true,
   },
 };
 
@@ -86,6 +88,7 @@ export const dev: Config = {
     ...defaultConfig.features,
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
+    "tiedotuspalvelu.alb.tls13pq.enabled": true,
   },
 };
 
@@ -105,6 +108,7 @@ export const qa: Config = {
     "tiedotuspalvelu.suomifi-viestit.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.base-url":
       "https://api.messages-qa.suomi.fi",
+    "tiedotuspalvelu.alb.tls13pq.enabled": true,
   },
 };
 
@@ -123,5 +127,6 @@ export const prod: Config = {
     ...defaultConfig.features,
     "tiedotuspalvelu.suomifi-viestit.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.base-url": "https://api.messages.suomi.fi",
+    "tiedotuspalvelu.alb.tls13pq.enabled": false,
   },
 };
