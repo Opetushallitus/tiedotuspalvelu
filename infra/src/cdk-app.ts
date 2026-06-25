@@ -570,7 +570,9 @@ class TiedotuspalveluStack extends cdk.Stack {
       port: 443,
       open: true,
       certificates: [certificate],
-      ...(config.features["tiedotuspalvelu.alb.tls13pq.enabled"] ? { sslPolicy: elasticloadbalancingv2.SslPolicy.TLS13_12_RES_PQ } : {}),
+      ...(config.features["tiedotuspalvelu.alb.tls13pq.enabled"]
+        ? { sslPolicy: elasticloadbalancingv2.SslPolicy.TLS13_12_RES_PQ }
+        : {}),
     });
     const target = listener.addTargets("ServiceTarget", {
       port: appPort,
