@@ -1,3 +1,5 @@
+import * as constants from "./constants";
+
 const environments = ["hahtuva", "dev", "qa", "prod"] as const;
 type EnvironmentName = (typeof environments)[number];
 
@@ -14,6 +16,7 @@ export type Config = {
     exportBucket: string;
     exportKeyArn: string;
   };
+  albAccessLogsExpirationDays: number;
   features: {
     "tiedotuspalvelu.fetch-oppija.enabled": boolean;
     "tiedotuspalvelu.suomifi-viestit.enabled": boolean;
@@ -21,15 +24,18 @@ export type Config = {
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": boolean;
     "tiedotuspalvelu.henkilo-import.enabled": boolean;
     "tiedotuspalvelu.alb.tls13pq.enabled": boolean;
+    "tiedotuspalvelu.alb.accessLogging.enabled": boolean;
   };
 };
 
 const defaultConfig = {
   tiedotuspalveluCapacity: { min: 2, max: 4 },
+  albAccessLogsExpirationDays: constants.FIVE_YEARS_IN_DAYS,
   features: {
     "tiedotuspalvelu.fetch-oppija.enabled": true,
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": true,
     "tiedotuspalvelu.henkilo-import.enabled": true,
+    "tiedotuspalvelu.alb.accessLogging.enabled": false,
   },
 };
 
@@ -70,6 +76,7 @@ export const hahtuva: Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": false,
     "tiedotuspalvelu.alb.tls13pq.enabled": true,
+    "tiedotuspalvelu.alb.accessLogging.enabled": true,
   },
 };
 
@@ -128,5 +135,6 @@ export const prod: Config = {
     "tiedotuspalvelu.suomifi-viestit.enabled": true,
     "tiedotuspalvelu.suomifi-viestit.base-url": "https://api.messages.suomi.fi",
     "tiedotuspalvelu.alb.tls13pq.enabled": false,
+    "tiedotuspalvelu.alb.accessLogging.enabled": true,
   },
 };

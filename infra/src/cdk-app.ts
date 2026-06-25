@@ -16,6 +16,7 @@ import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import * as s3 from "aws-cdk-lib/aws-s3";
 import { getConfig, getEnvironment } from "./config";
 import * as path from "node:path";
 import { createHealthCheckStacks } from "./health-check";
@@ -540,6 +541,8 @@ class TiedotuspalveluStack extends cdk.Stack {
       },
     );
 
+    this.addAlbAccessLogging(alb);
+
     new route53.ARecord(this, "ARecord", {
       zone: props.hostedZone,
       recordName: config.tiedotuspalveluDomain,
@@ -757,6 +760,31 @@ class TiedotuspalveluStack extends cdk.Stack {
       "=",
       callerHenkiloOid,
     );
+  }
+
+  addAlbAccessLogging(alb: elasticloadbalancingv2.ApplicationLoadBalancer) {
+    if (config.features["tiedotuspalvelu.alb.accessLogging.enabled"]) {
+      const albAccessLogsBucket = new s3.Bucket(
+        this,
+        "LoadBalancerAccessLogsBucket",
+        {
+          bucketName: `tiedotus-alb-access-logs-${this.account}-${this.region}`,
+          encryption: s3.BucketEncryption.S3_MANAGED,
+          blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+          enforceSSL: true,
+          lifecycleRules: [
+            {
+              id: "ExpireAfter5Years",
+              enabled: true,
+              expiration: cdk.Duration.days(config.albAccessLogsExpirationDays),
+            },
+          ],
+          removalPolicy: cdk.RemovalPolicy.RETAIN,
+        },
+      );
+
+      alb.logAccessLogs(albAccessLogsBucket);
+    }
   }
 }
 
