@@ -76,7 +76,6 @@ export const hahtuva: Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.fetch-kielitutkintotodistus.enabled": false,
     "tiedotuspalvelu.alb.tls13pq.enabled": true,
-    "tiedotuspalvelu.alb.accessLogging.enabled": true,
   },
 };
 
