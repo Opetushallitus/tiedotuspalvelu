@@ -80,7 +80,7 @@ export class SecurityAlertsStack extends cdk.Stack {
     );
 
     const trailBucket = new s3.Bucket(this, "SecurityAlertsTrailBucket", {
-      bucketName: `tiedotus-security-alerts-cloudtrail-bucket-${this.account}-${this.region}`,
+      bucketName: `tiedotus-security-alerts-${this.account}-${this.region}`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       versioned: true,
@@ -104,7 +104,7 @@ export class SecurityAlertsStack extends cdk.Stack {
       displayName: "AWS Security Alerts",
     });
 
-    const alertEmail = ssm.StringParameter.valueForStringParameter(
+    const alertEmail = ssm.StringParameter.valueFromLookup(
       this,
       "/security-alerts/email",
     );
