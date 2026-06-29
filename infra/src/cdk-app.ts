@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as constructs from "constructs";
+import * as cloudtrail from "aws-cdk-lib/aws-cloudtrail";
 import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
@@ -24,6 +25,7 @@ import * as alarms from "./alarms";
 import { wireAlarmToSnsTopic } from "./alarms";
 import * as constants from "./constants";
 import { ResponseAlarms } from "./response-alarms";
+import { SecurityAlertsStack } from "./security-alerts";
 
 const config = getConfig();
 
@@ -71,6 +73,16 @@ class CdkApp extends cdk.App {
       alarmTopic,
       vpc,
     });
+
+    if (
+      config.features["tiedotuspalvelu.security.infra-changes-alerts.enabled"]
+    ) {
+      new SecurityAlertsStack(
+        this,
+        "TiedotuspalveluSecurityAlarms",
+        stackProps,
+      );
+    }
   }
 }
 
