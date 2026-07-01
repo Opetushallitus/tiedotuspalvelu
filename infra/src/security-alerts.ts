@@ -122,10 +122,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "UnauthorizedAPICalls", {
       logGroup,
-      filterName: "UnauthorizedAPICalls",
+      filterName: "TiedotuspalveluInfraUnauthorizedAPICalls",
       filterPattern:
         '{ ($.errorCode = "AccessDenied") || ($.errorCode = "UnauthorizedAccess") || ($.errorCode = "*Unauthorized*") }',
-      alertDescription: "CIS 3.1 - Unauthorized API calls detected",
+      alertDescription: "Tiedotuspalvelu - Unauthorized API calls detected",
       snsTopic: alertTopic,
     });
   }
@@ -136,10 +136,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "IAMPolicyChanges", {
       logGroup,
-      filterName: "IAMPolicyChanges",
+      filterName: "TiedotuspalveluInfraIAMPolicyChanges",
       filterPattern:
         "{ ($.eventName=DeleteGroupPolicy) || ($.eventName=DeleteRolePolicy) || ($.eventName=DeleteUserPolicy) || ($.eventName=PutGroupPolicy) || ($.eventName=PutRolePolicy) || ($.eventName=PutUserPolicy) || ($.eventName=CreatePolicy) || ($.eventName=DeletePolicy) || ($.eventName=CreatePolicyVersion) || ($.eventName=DeletePolicyVersion) || ($.eventName=SetDefaultPolicyVersion) || ($.eventName=AttachRolePolicy) || ($.eventName=DetachRolePolicy) || ($.eventName=AttachUserPolicy) || ($.eventName=DetachUserPolicy) || ($.eventName=AttachGroupPolicy) || ($.eventName=DetachGroupPolicy) }",
-      alertDescription: "CIS 3.4 - IAM policy changes detected",
+      alertDescription: "Tiedotuspalvelu - IAM policy changes detected",
       snsTopic: alertTopic,
     });
   }
@@ -150,10 +150,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "CloudTrailChanges", {
       logGroup,
-      filterName: "CloudTrailChanges",
+      filterName: "TiedotuspalveluInfraCloudTrailChanges",
       filterPattern:
         "{ ($.eventName=CreateTrail) || ($.eventName=UpdateTrail) || ($.eventName=DeleteTrail) || ($.eventName=StartLogging) || ($.eventName=StopLogging) }",
-      alertDescription: "CIS 3.5 - CloudTrail configuration changed",
+      alertDescription: "Tiedotuspalvelu - CloudTrail configuration changed",
       snsTopic: alertTopic,
     });
   }
@@ -161,10 +161,11 @@ export class SecurityAlertsStack extends cdk.Stack {
   createAlertForKmsCmkChanges(logGroup: logs.LogGroup, alertTopic: sns.ITopic) {
     new SecurityAlert(this, "KMSCMKChanges", {
       logGroup,
-      filterName: "KMSCMKChanges",
+      filterName: "TiedotuspalveluInfraKMSCMKChanges",
       filterPattern:
         "{ ($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey) || ($.eventName=ScheduleKeyDeletion) || ($.eventName=DeleteImportedKeyMaterial) || ($.eventName=DisableKeyRotation)) }",
-      alertDescription: "CIS 3.7 - KMS CMK disabled or scheduled for deletion",
+      alertDescription:
+        "Tiedotuspalvelu - KMS CMK disabled or scheduled for deletion",
       snsTopic: alertTopic,
     });
   }
@@ -175,10 +176,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "S3BucketPolicyChanges", {
       logGroup,
-      filterName: "S3BucketPolicyChanges",
+      filterName: "TiedotuspalveluInfraS3BucketPolicyChanges",
       filterPattern:
         "{ ($.eventSource = s3.amazonaws.com) && (($.eventName=PutBucketAcl) || ($.eventName=PutBucketPolicy) || ($.eventName=PutBucketCors) || ($.eventName=PutBucketLifecycle) || ($.eventName=PutBucketReplication) || ($.eventName=DeleteBucketPolicy) || ($.eventName=DeleteBucketCors) || ($.eventName=DeleteBucketLifecycle) || ($.eventName=DeleteBucketReplication)) }",
-      alertDescription: "CIS 3.8 - S3 bucket policy/ACL changed",
+      alertDescription: "Tiedotuspalvelu - S3 bucket policy/ACL changed",
       snsTopic: alertTopic,
     });
   }
@@ -189,10 +190,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "SecurityGroupChanges", {
       logGroup,
-      filterName: "SecurityGroupChanges",
+      filterName: "TiedotuspalveluInfraSecurityGroupChanges",
       filterPattern:
         "{ ($.eventName=AuthorizeSecurityGroupIngress) || ($.eventName=AuthorizeSecurityGroupEgress) || ($.eventName=RevokeSecurityGroupIngress) || ($.eventName=RevokeSecurityGroupEgress) || ($.eventName=CreateSecurityGroup) || ($.eventName=DeleteSecurityGroup) }",
-      alertDescription: "CIS 3.10 - Security group changed",
+      alertDescription: "Tiedotuspalvelu - Security group changed",
       snsTopic: alertTopic,
     });
   }
@@ -203,10 +204,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "NetworkGatewayChanges", {
       logGroup,
-      filterName: "NetworkGatewayChanges",
+      filterName: "TiedotuspalveluInfraNetworkGatewayChanges",
       filterPattern:
         "{ ($.eventName=CreateCustomerGateway) || ($.eventName=DeleteCustomerGateway) || ($.eventName=AttachInternetGateway) || ($.eventName=CreateInternetGateway) || ($.eventName=DeleteInternetGateway) || ($.eventName=DetachInternetGateway) }",
-      alertDescription: "CIS 3.12 - Network gateway changed",
+      alertDescription: "Tiedotuspalvelu - Network gateway changed",
       snsTopic: alertTopic,
     });
   }
@@ -217,10 +218,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "RouteTableChanges", {
       logGroup,
-      filterName: "RouteTableChanges",
+      filterName: "TiedotuspalveluInfraRouteTableChanges",
       filterPattern:
         "{ ($.eventName=CreateRoute) || ($.eventName=CreateRouteTable) || ($.eventName=ReplaceRoute) || ($.eventName=ReplaceRouteTableAssociation) || ($.eventName=DeleteRouteTable) || ($.eventName=DeleteRoute) || ($.eventName=DisassociateRouteTable) }",
-      alertDescription: "CIS 3.13 - Route table changed",
+      alertDescription: "Tiedotuspalvelu - Route table changed",
       snsTopic: alertTopic,
     });
   }
@@ -228,10 +229,10 @@ export class SecurityAlertsStack extends cdk.Stack {
   createAlertForVpcChanges(logGroup: logs.LogGroup, alertTopic: sns.ITopic) {
     new SecurityAlert(this, "VPCChanges", {
       logGroup,
-      filterName: "VPCChanges",
+      filterName: "TiedotuspalveluInfraVPCChanges",
       filterPattern:
         "{ ($.eventName=CreateVpc) || ($.eventName=DeleteVpc) || ($.eventName=ModifyVpcAttribute) || ($.eventName=AcceptVpcPeeringConnection) || ($.eventName=CreateVpcPeeringConnection) || ($.eventName=DeleteVpcPeeringConnection) || ($.eventName=RejectVpcPeeringConnection) || ($.eventName=AttachClassicLinkVpc) || ($.eventName=DetachClassicLinkVpc) || ($.eventName=DisableVpcClassicLink) || ($.eventName=EnableVpcClassicLink) }",
-      alertDescription: "CIS 3.14 - VPC changed",
+      alertDescription: "Tiedotuspalvelu - VPC changed",
       snsTopic: alertTopic,
     });
   }
@@ -242,11 +243,11 @@ export class SecurityAlertsStack extends cdk.Stack {
   ) {
     new SecurityAlert(this, "SSMParameterStoreChanges", {
       logGroup,
-      filterName: "SSMParameterStoreChanges",
+      filterName: "TiedotuspalveluInfraSSMParameterStoreChanges",
       filterPattern:
         "{ ($.eventSource = ssm.amazonaws.com) && (($.eventName = PutParameter) || ($.eventName = DeleteParameter) || ($.eventName = DeleteParameters) || ($.eventName = LabelParameterVersion) || ($.eventName = RemoveTagsFromResource) || ($.eventName = AddTagsToResource)) }",
       alertDescription:
-        "SSM Parameter Store - parameter created, modified, deleted, or retagged",
+        "Tiedotuspalvelu - SSM Parameter Store parameter created, modified, deleted, or retagged",
       snsTopic: alertTopic,
     });
   }
