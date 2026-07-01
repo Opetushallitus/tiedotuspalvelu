@@ -80,7 +80,10 @@ class CdkApp extends cdk.App {
       new SecurityAlertsStack(
         this,
         "TiedotuspalveluSecurityAlarms",
-        stackProps,
+        {
+          ...stackProps,
+          alarmTopic,
+        },
       );
     }
   }

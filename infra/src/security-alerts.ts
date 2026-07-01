@@ -59,6 +59,7 @@ class SecurityAlert extends constructs.Construct {
 
 interface SecurityAlertsStackProps extends cdk.StackProps {
   logRetentionDays?: logs.RetentionDays;
+  alarmTopic: sns.ITopic;
 }
 
 export class SecurityAlertsStack extends cdk.Stack {
@@ -99,21 +100,7 @@ export class SecurityAlertsStack extends cdk.Stack {
       managementEvents: cloudtrail.ReadWriteType.ALL,
     });
 
-    const alertTopic = new sns.Topic(this, "SecurityAlertTopic", {
-      topicName: "security-alerts",
-      displayName: "AWS Security Alerts",
-    });
-
-    const alertEmail = ssm.StringParameter.valueFromLookup(
-      this,
-      "/security-alerts/email",
-    );
-
-    alertTopic.addSubscription(
-      new sns_subscriptions.EmailSubscription(alertEmail),
-    );
-
-    this.createAlerts(logGroup, alertTopic);
+    this.createAlerts(logGroup, props.alarmTopic);
   }
 
   createAlerts(logGroup: logs.LogGroup, alertTopic: sns.ITopic) {
