@@ -17,7 +17,7 @@
     "prettier": "3.8.5",
     "style-loader": "4.0.0",
     "ts-loader": "9.6.2",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "webpack": "5.108.1",
     "webpack-cli": "7.0.3",
     "webpack-dev-server": "5.2.5"
