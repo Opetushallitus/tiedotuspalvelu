@@ -54,6 +54,7 @@ class SecurityAlert extends constructs.Construct {
     });
 
     this.alarm.addAlarmAction(new cloudwatch_actions.SnsAction(props.snsTopic));
+    this.alarm.addOkAction(new cloudwatch_actions.SnsAction(props.snsTopic));
   }
 }
 
