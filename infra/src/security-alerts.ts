@@ -6,8 +6,6 @@ import * as cloudwatch_actions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as sns from "aws-cdk-lib/aws-sns";
-import * as sns_subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
-import * as ssm from "aws-cdk-lib/aws-ssm";
 
 interface SecurityAlertProps {
   logGroup: logs.ILogGroup;
@@ -105,7 +103,6 @@ export class SecurityAlertsStack extends cdk.Stack {
   }
 
   createAlerts(logGroup: logs.LogGroup, alertTopic: sns.ITopic) {
-    this.createAlertForUnauthorizedApiCalls(logGroup, alertTopic);
     this.createAlertForIamPolicyChanges(logGroup, alertTopic);
     this.createAlertForCloudTrailChanges(logGroup, alertTopic);
     this.createAlertForKmsCmkChanges(logGroup, alertTopic);
@@ -115,20 +112,6 @@ export class SecurityAlertsStack extends cdk.Stack {
     this.createAlertForRouteTableChanges(logGroup, alertTopic);
     this.createAlertForVpcChanges(logGroup, alertTopic);
     this.createAlertForParameterStoreChanges(logGroup, alertTopic);
-  }
-
-  createAlertForUnauthorizedApiCalls(
-    logGroup: logs.LogGroup,
-    alertTopic: sns.ITopic,
-  ) {
-    new SecurityAlert(this, "UnauthorizedAPICalls", {
-      logGroup,
-      filterName: "TiedotuspalveluInfraUnauthorizedAPICalls",
-      filterPattern:
-        '{ ($.errorCode = "AccessDenied") || ($.errorCode = "UnauthorizedAccess") || ($.errorCode = "*Unauthorized*") }',
-      alertDescription: "Tiedotuspalvelu - Unauthorized API calls detected",
-      snsTopic: alertTopic,
-    });
   }
 
   createAlertForIamPolicyChanges(
