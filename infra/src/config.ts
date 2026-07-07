@@ -98,6 +98,7 @@ export const dev: Config = {
     "tiedotuspalvelu.suomifi-viestit.enabled": false,
     "tiedotuspalvelu.suomifi-viestit.base-url": "http://localhost",
     "tiedotuspalvelu.alb.tls13pq.enabled": true,
+    "tiedotuspalvelu.security.infra-changes-alerts.enabled": true,
   },
 };
 
