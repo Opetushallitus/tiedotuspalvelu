@@ -324,7 +324,7 @@ class TiedotuspalveluStack extends cdk.Stack {
 
     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
       logGroupName: "Tiedotuspalvelu/tiedotuspalvelu",
-      retention: logs.RetentionDays.INFINITE,
+      retention: logs.RetentionDays.FIVE_YEARS,
     });
     this.koskiErrorsAlarm(logGroup, props.alarmTopic);
     this.apiLatencyMetric(logGroup);
