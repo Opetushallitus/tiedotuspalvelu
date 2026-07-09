@@ -119,6 +119,7 @@ export const qa: Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url":
       "https://api.messages-qa.suomi.fi",
     "tiedotuspalvelu.alb.tls13pq.enabled": true,
+    "tiedotuspalvelu.security.infra-changes-alerts.enabled": true,
   },
 };
 
