@@ -8,7 +8,7 @@ function main {
   cd "$repo/scripts/ci"
   init_nodejs
   npm_ci_if_needed
-  ENVIRONMENT_NAME=${env} npx ts-node publish-release-notes.ts
+  ENVIRONMENT_NAME=${env} node publish-release-notes.ts
 }
 
 main "$@"
