@@ -15,7 +15,7 @@ RUN npx webpack build
 WORKDIR /app
 RUN mvn --batch-mode clean package -s codebuild-mvn-settings.xml -DskipTests
 
-FROM amazoncorretto:25.0.3@sha256:ebd0b9d1aac0483d5ab904abd7564d6f85c393745dcbb818dafdcc4474feaa1c
+FROM amazoncorretto:25.0.4@sha256:e2fbcfc775f590cb9eed93f0fe622f1c30aad26376163f1cee9631aed723245a
 WORKDIR /app
 
 COPY --from=build /app/target/tiedotuspalvelu-1.0.0.jar application.jar
