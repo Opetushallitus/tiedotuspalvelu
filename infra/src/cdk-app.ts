@@ -74,14 +74,10 @@ class CdkApp extends cdk.App {
       vpc,
     });
 
-    if (
-      config.features["tiedotuspalvelu.security.infra-changes-alerts.enabled"]
-    ) {
-      new SecurityAlertsStack(this, "TiedotuspalveluSecurityAlarms", {
-        ...stackProps,
-        alarmTopic,
-      });
-    }
+    new SecurityAlertsStack(this, "TiedotuspalveluSecurityAlarms", {
+      ...stackProps,
+      alarmTopic,
+    });
   }
 }
 
