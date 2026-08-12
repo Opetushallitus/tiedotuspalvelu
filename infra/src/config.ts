@@ -140,5 +140,6 @@ export const prod: Config = {
     "tiedotuspalvelu.suomifi-viestit.base-url": "https://api.messages.suomi.fi",
     "tiedotuspalvelu.alb.tls13pq.enabled": false,
     "tiedotuspalvelu.alb.accessLogging.enabled": true,
+    "tiedotuspalvelu.security.infra-changes-alerts.enabled": true,
   },
 };
