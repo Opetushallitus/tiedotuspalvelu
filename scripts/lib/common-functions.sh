@@ -33,7 +33,18 @@ function select_java_version {
   else
     info "Switching to Java $1"
     java_version="$1"
-    JAVA_HOME="$(/usr/libexec/java_home -v "${java_version}")"
+    case "$(uname -s)" in
+      Darwin)
+        JAVA_HOME="$(/usr/libexec/java_home -v "${java_version}")"
+        ;;
+      Linux)
+        JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+        ;;
+      *)
+        fatal "Unsupported operating system: $(uname -s)"
+        return 1
+        ;;
+    esac
     export JAVA_HOME
   fi
   java -version
