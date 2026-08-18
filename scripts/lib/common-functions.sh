@@ -26,7 +26,6 @@ function is_running_on_github_actions {
 }
 
 function select_java_version {
-
   if is_running_on_codebuild; then
     info "Running on CodeBuild; Java version is managed in buildspec"
   elif is_running_on_github_actions; then
