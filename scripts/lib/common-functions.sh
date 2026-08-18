@@ -26,6 +26,7 @@ function is_running_on_github_actions {
 }
 
 function select_java_version {
+
   if is_running_on_codebuild; then
     info "Running on CodeBuild; Java version is managed in buildspec"
   elif is_running_on_github_actions; then
@@ -38,7 +39,7 @@ function select_java_version {
         JAVA_HOME="$(/usr/libexec/java_home -v "${java_version}")"
         ;;
       Linux)
-        JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+        select_latest_sdkman_corretto_java_version "${java_version}"
         ;;
       *)
         fatal "Unsupported operating system: $(uname -s)"
@@ -48,6 +49,27 @@ function select_java_version {
     export JAVA_HOME
   fi
   java -version
+}
+
+function select_latest_sdkman_corretto_java_version {
+  local -r java_version="$1"
+  local -r shell_options="$-"
+  local latest_java_version
+
+  set +u # SDKMAN's initialization script is not compatible with nounset mode.
+  source "${SDKMAN_DIR:-${HOME}/.sdkman}/bin/sdkman-init.sh"; 
+  # SDKMAN requires specific identifiers with major, minor, and patch versions to be used,
+  # so get the latest Corretto version and use that
+  latest_java_version="$(
+    sdk list java \
+      | sed $'s/\033\\[[0-9;]*[[:alpha:]]//g' \
+      | grep -oE '[0-9]+(\.[0-9]+)+-amzn' \
+      | grep -E "^${java_version}\\." \
+      | sort -Vu \
+      | tail -n 1
+  )"
+  sdk use java "${latest_java_version}"
+  set -u
 }
 
 function wait_for_local_db_to_be_healthy {
