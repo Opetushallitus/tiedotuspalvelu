@@ -67,6 +67,7 @@ function select_latest_sdkman_corretto_java_version {
       | sort -Vu \
       | tail -n 1
   )"
+  sdk install java "${latest_java_version}"
   sdk use java "${latest_java_version}"
   set -u
 }
