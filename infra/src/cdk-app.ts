@@ -357,8 +357,8 @@ class TiedotuspalveluStack extends cdk.Stack {
       this,
       "TaskDefinition",
       {
-        cpu: 2048,
-        memoryLimitMiB: 5120,
+        cpu: config.taskCpu,
+        memoryLimitMiB: config.taskMemoryMiB,
         runtimePlatform: {
           operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
           cpuArchitecture: ecs.CpuArchitecture.ARM64,
