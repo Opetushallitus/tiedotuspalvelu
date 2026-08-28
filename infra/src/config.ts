@@ -8,6 +8,8 @@ export type AutoScalingLimits = {
   max: number;
 };
 export type Config = {
+  taskCpu: number;
+  taskMemoryMiB: number;
   tiedotuspalveluDomain: string;
   opintopolkuHost: string;
   virkailijaHost: string;
@@ -29,6 +31,8 @@ export type Config = {
 };
 
 const defaultConfig = {
+  taskCpu: 1024,
+  taskMemoryMiB: 2048,
   tiedotuspalveluCapacity: { min: 2, max: 4 },
   albAccessLogsExpirationDays: constants.FIVE_YEARS_IN_DAYS,
   features: {
@@ -120,6 +124,8 @@ export const qa: Config = {
 
 export const prod: Config = {
   ...defaultConfig,
+  taskCpu: 2048,
+  taskMemoryMiB: 5120,
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
