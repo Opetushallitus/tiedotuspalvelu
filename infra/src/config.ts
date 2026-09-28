@@ -33,7 +33,7 @@ export type Config = {
 const defaultConfig = {
   taskCpu: 1024,
   taskMemoryMiB: 2048,
-  tiedotuspalveluCapacity: { min: 2, max: 4 },
+  tiedotuspalveluCapacity: { min: 3, max: 5 },
   albAccessLogsExpirationDays: constants.FIVE_YEARS_IN_DAYS,
   features: {
     "tiedotuspalvelu.fetch-oppija.enabled": true,
@@ -126,6 +126,7 @@ export const prod: Config = {
   ...defaultConfig,
   taskCpu: 2048,
   taskMemoryMiB: 5120,
+  tiedotuspalveluCapacity: { min: 2, max: 4 },
   tiedotuspalveluDomain: "prod.tiedotuspalvelu.opintopolku.fi",
   opintopolkuHost: "opintopolku.fi",
   virkailijaHost: "virkailija.opintopolku.fi",
