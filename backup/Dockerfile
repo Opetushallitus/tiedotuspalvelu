@@ -1,4 +1,4 @@
-FROM amazonlinux:2027@sha256:94adffec30a5fe0f6c81b8f47bbf961f265b191e6d178a51a45c3bbd9232f6e7
+FROM amazonlinux:2027@sha256:ac5e5f7cb062949a53c5e4a570805bb847c87cc91fa3aa32c2f95d18e8ba1342
 
 RUN yum update && yum install -y postgresql16 awscli jq
 
