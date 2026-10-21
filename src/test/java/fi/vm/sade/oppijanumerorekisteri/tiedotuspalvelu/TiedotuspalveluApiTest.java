@@ -2,7 +2,7 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituExamineeDetailsDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituKoodiarvoDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.TiedoteDto;

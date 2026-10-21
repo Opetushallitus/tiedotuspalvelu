@@ -1,7 +1,7 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.locale;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;

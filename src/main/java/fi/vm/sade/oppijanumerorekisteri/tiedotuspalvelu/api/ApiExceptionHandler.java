@@ -1,7 +1,7 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.ErrorResponse.ValidationError;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +49,7 @@ public class ApiExceptionHandler {
   private String toJson(Object value) {
     try {
       return objectMapper.writeValueAsString(value);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       return String.valueOf(value);
     }
   }
