@@ -32,7 +32,8 @@ public class OpenApiDocsTest extends TiedotuspalveluApiTest {
             .path("responses")
             .path("400");
 
-    assertThat(badRequestResponse.findValuesAsText("$ref")).contains(ERROR_RESPONSE_SCHEMA_REF);
+    // assertThat(badRequestResponse.findValuesAsText("$ref")).contains(ERROR_RESPONSE_SCHEMA_REF);
+    assertThat(badRequestResponse.findValuesAsString("$ref")).contains(ERROR_RESPONSE_SCHEMA_REF);
   }
 
   private JsonNode apiDocs() throws Exception {
