@@ -19,7 +19,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import tools.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.io.IOException;
 import java.net.URI;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import tools.jackson.databind.ObjectMapper;
 
 public class LoggingHttpClientTest {
 
@@ -300,7 +300,7 @@ public class LoggingHttpClientTest {
       assertTrue(directives.isArray(), "_aws.CloudWatchMetrics must be an array");
       assertEquals(1, directives.size(), "_aws.CloudWatchMetrics contains one metric directive");
       var directive = directives.get(0);
-        assertEquals(
+      assertEquals(
           "Tiedotuspalvelu", directive.required("Namespace").stringValue(), "Namespace must match");
 
       var dimensions = directive.get("Dimensions");
@@ -327,11 +327,10 @@ public class LoggingHttpClientTest {
       assertEquals(1, metrics.size(), "produces one metric");
       var metric = metrics.get(0);
       assertNotNull(metric.get("Name"), "metric Name must be present");
-        assertTrue(metric.required("Name").isString(), "metric Name must be a string");
-        var metricName = metric.required("Name").stringValue();
+      assertTrue(metric.required("Name").isString(), "metric Name must be a string");
+      var metricName = metric.required("Name").stringValue();
       assertNotNull(
-          json.get(metricName),
-          "metric Name should reference a top level field per EMF spec");
+          json.get(metricName), "metric Name should reference a top level field per EMF spec");
       assertTrue(
           json.get(metricName).isNumber(),
           "the top level field referenced by Name must be numeric per EMF spec");

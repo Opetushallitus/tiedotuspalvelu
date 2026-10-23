@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -13,15 +11,17 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
@@ -57,7 +57,7 @@ public class AccessLogValveTest {
 
     assertEquals("GET", json.required("requestMethod").stringValue());
     assertEquals(
-      "GET /omat-viestit/actuator/health HTTP/1.1", json.required("request").stringValue());
+        "GET /omat-viestit/actuator/health HTTP/1.1", json.required("request").stringValue());
     assertEquals("200", json.required("responseCode").stringValue());
     assertTrue(
         json.get("responseTime").isNumber(),
@@ -70,11 +70,11 @@ public class AccessLogValveTest {
     assertEquals(xForwardedFor, json.required("x-forwarded-for").stringValue());
     assertEquals(referer, json.required("referer").stringValue());
     assertTrue(
-      json.required("requestId")
-        .stringValue()
+        json.required("requestId")
+            .stringValue()
             .matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"),
         "requestId should be a UUID set by RequestIdFilter, was: "
-        + json.required("requestId").stringValue());
+            + json.required("requestId").stringValue());
 
     for (String field :
         new String[] {

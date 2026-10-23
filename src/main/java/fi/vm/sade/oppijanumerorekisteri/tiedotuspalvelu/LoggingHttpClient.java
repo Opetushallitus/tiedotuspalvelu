@@ -5,8 +5,6 @@ import static fi.vm.sade.cloudwatch.CloudWatchEMFEntry.FIELD_AWS_METADATA;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import fi.vm.sade.cloudwatch.CloudWatchEMFEntry;
 import fi.vm.sade.cloudwatch.MetricDefinition;
 import fi.vm.sade.cloudwatch.MetricDirective;
@@ -22,6 +20,8 @@ import java.util.function.Predicate;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 public class LoggingHttpClient {
