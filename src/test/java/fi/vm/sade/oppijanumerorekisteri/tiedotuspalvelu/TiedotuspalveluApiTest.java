@@ -2,7 +2,6 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituExamineeDetailsDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituKoodiarvoDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.TiedoteDto;
@@ -19,13 +18,14 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -74,7 +74,7 @@ public class TiedotuspalveluApiTest {
             .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
             .build();
     var response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-    return new ObjectMapper().readTree(response.body()).get("access_token").asText();
+    return new ObjectMapper().readTree(response.body()).required("access_token").stringValue();
   }
 
   protected RequestPostProcessor tokenFor(String clientId) {
@@ -141,7 +141,7 @@ public class TiedotuspalveluApiTest {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    var id = UUID.fromString(objectMapper.readTree(response).get("id").asText());
+    var id = UUID.fromString(objectMapper.readTree(response).required("id").stringValue());
     return tiedoteRepository.findById(id).orElseThrow();
   }
 

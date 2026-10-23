@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
 
 public class OpenApiDocsTest extends TiedotuspalveluApiTest {
 
@@ -32,7 +32,8 @@ public class OpenApiDocsTest extends TiedotuspalveluApiTest {
             .path("responses")
             .path("400");
 
-    assertThat(badRequestResponse.findValuesAsText("$ref")).contains(ERROR_RESPONSE_SCHEMA_REF);
+    // assertThat(badRequestResponse.findValuesAsText("$ref")).contains(ERROR_RESPONSE_SCHEMA_REF);
+    assertThat(badRequestResponse.findValuesAsString("$ref")).contains(ERROR_RESPONSE_SCHEMA_REF);
   }
 
   private JsonNode apiDocs() throws Exception {

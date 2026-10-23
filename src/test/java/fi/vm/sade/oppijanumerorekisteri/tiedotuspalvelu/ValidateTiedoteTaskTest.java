@@ -19,7 +19,7 @@ import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituExamineeDetailsD
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.api.KituKoodiarvoDto;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija.ValidateTiedoteTask;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.SuomiFiViesti;
-import java.net.URL;
+import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -329,7 +329,7 @@ public class ValidateTiedoteTaskTest extends TiedotuspalveluApiTest implements R
       try {
         var token = auth.substring("Bearer ".length());
         var jwt = SignedJWT.parse(token);
-        var jwkSet = JWKSet.load(new URL(jwksUri));
+        var jwkSet = JWKSet.load(URI.create(jwksUri).toURL());
         var jwk = jwkSet.getKeyByKeyId(jwt.getHeader().getKeyID());
         if (jwk == null) return MatchResult.noMatch();
         var verifier = new RSASSAVerifier(((RSAKey) jwk).toRSAPublicKey());

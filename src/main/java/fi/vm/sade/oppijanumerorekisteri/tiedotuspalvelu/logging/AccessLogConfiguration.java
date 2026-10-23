@@ -3,8 +3,7 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.logging;
 import ch.qos.logback.access.tomcat.LogbackValve;
 import fi.vm.sade.RequestCallerFilter;
 import fi.vm.sade.RequestIdFilter;
-import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -21,12 +20,11 @@ public class AccessLogConfiguration {
       if (container instanceof TomcatServletWebServerFactory) {
         ((TomcatServletWebServerFactory) container)
             .addContextCustomizers(
-                (TomcatContextCustomizer)
-                    context -> {
-                      LogbackValve logbackValve = new LogbackValve();
-                      logbackValve.setFilename("logback-access.xml");
-                      context.getPipeline().addValve(logbackValve);
-                    });
+                context -> {
+                  LogbackValve logbackValve = new LogbackValve();
+                  logbackValve.setFilename("logback-access.xml");
+                  context.getPipeline().addValve(logbackValve);
+                });
       }
     };
   }

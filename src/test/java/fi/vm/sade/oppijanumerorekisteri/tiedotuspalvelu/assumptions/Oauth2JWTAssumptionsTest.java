@@ -3,7 +3,6 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.assumptions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedotuspalveluProperties;
@@ -17,6 +16,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 class Oauth2JWTAssumptionsTest {
@@ -79,7 +79,7 @@ class Oauth2JWTAssumptionsTest {
     assertEquals(200, response.statusCode(), "Token request failed: " + response.body());
 
     var tokenResponse = new ObjectMapper().readTree(response.body());
-    var accessToken = tokenResponse.get("access_token").asText();
+    var accessToken = tokenResponse.required("access_token").stringValue();
     return SignedJWT.parse(accessToken).getJWTClaimsSet();
   }
 }

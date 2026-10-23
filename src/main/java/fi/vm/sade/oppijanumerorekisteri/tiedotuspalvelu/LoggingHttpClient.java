@@ -5,11 +5,6 @@ import static fi.vm.sade.cloudwatch.CloudWatchEMFEntry.FIELD_AWS_METADATA;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import fi.vm.sade.cloudwatch.CloudWatchEMFEntry;
 import fi.vm.sade.cloudwatch.MetricDefinition;
 import fi.vm.sade.cloudwatch.MetricDirective;
@@ -25,6 +20,8 @@ import java.util.function.Predicate;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 public class LoggingHttpClient {
@@ -44,11 +41,7 @@ public class LoggingHttpClient {
       String clientName, Predicate<HttpResponse<?>> defaultShouldLogResponseBody) {
     this.clientName = clientName;
     this.defaultShouldLogResponseBody = defaultShouldLogResponseBody;
-    this.objectMapper =
-        new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .registerModule(new Jdk8Module())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    this.objectMapper = new ObjectMapper();
     this.delegate = HttpClient.newHttpClient();
   }
 
@@ -92,7 +85,7 @@ public class LoggingHttpClient {
   private String toJson(OutgoingRequestLog entry) {
     try {
       return objectMapper.writeValueAsString(entry);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.error("Failed to serialize outgoing request log entry, aborting process", e);
       System.exit(1);
       return null;

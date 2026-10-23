@@ -1,6 +1,5 @@
 package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.oppija;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -16,6 +15,7 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component

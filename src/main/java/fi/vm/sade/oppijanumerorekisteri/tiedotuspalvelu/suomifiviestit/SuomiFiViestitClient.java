@@ -2,8 +2,6 @@ package fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit;
 
 import static fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient.LOG_BODY_ON_ERROR;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.LoggingHttpClient;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.TiedotuspalveluProperties;
 import fi.vm.sade.oppijanumerorekisteri.tiedotuspalvelu.suomifiviestit.schema.*;
@@ -15,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @AllArgsConstructor
@@ -49,7 +49,7 @@ public class SuomiFiViestitClient {
         throw new IllegalStateException(
             "Suomi.fi viestit call failed with status " + response.statusCode());
       }
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new IllegalStateException("Failed to serialize Suomi.fi viesti request", e);
     } catch (IOException e) {
       throw new IllegalStateException("Suomi.fi viestit call failed with IO error", e);
@@ -77,7 +77,7 @@ public class SuomiFiViestitClient {
       }
       throw new IllegalStateException(
           "Suomi.fi viestit message call failed with status " + response.statusCode());
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new IllegalStateException("Failed to serialize Suomi.fi message request", e);
     } catch (IOException e) {
       throw new IllegalStateException("Suomi.fi viestit message call failed with IO error", e);
@@ -105,7 +105,7 @@ public class SuomiFiViestitClient {
       }
       throw new IllegalStateException(
           "Suomi.fi viestit message call failed with status " + response.statusCode());
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new IllegalStateException("Failed to serialize Suomi.fi message request", e);
     } catch (IOException e) {
       throw new IllegalStateException("Suomi.fi viestit message call failed with IO error", e);
@@ -134,7 +134,7 @@ public class SuomiFiViestitClient {
       }
       throw new IllegalStateException(
           "Suomi.fi viestit attachment call failed with status " + response.statusCode());
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new IllegalStateException("Failed to parse Suomi.fi attachment response", e);
     } catch (IOException e) {
       throw new IllegalStateException("Suomi.fi viestit attachment call failed with IO error", e);
@@ -183,7 +183,7 @@ public class SuomiFiViestitClient {
       }
       var tokenResponse = objectMapper.readValue(response.body(), AccessTokenResponse.class);
       return tokenResponse.accessToken();
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new IllegalStateException("Failed to serialize Suomi.fi token request", e);
     } catch (IOException e) {
       throw new IllegalStateException("Suomi.fi token call failed with IO error", e);
@@ -212,7 +212,7 @@ public class SuomiFiViestitClient {
             "Suomi.fi events call failed with status " + response.statusCode());
       }
       return objectMapper.readValue(response.body(), EventsResponse.class);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new IllegalStateException("Failed to parse Suomi.fi events response", e);
     } catch (IOException e) {
       throw new IllegalStateException("Suomi.fi events call failed with IO error", e);
