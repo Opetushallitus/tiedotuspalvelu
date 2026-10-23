@@ -79,7 +79,7 @@ class Oauth2JWTAssumptionsTest {
     assertEquals(200, response.statusCode(), "Token request failed: " + response.body());
 
     var tokenResponse = new ObjectMapper().readTree(response.body());
-    var accessToken = tokenResponse.get("access_token").asText();
+    var accessToken = tokenResponse.required("access_token").stringValue();
     return SignedJWT.parse(accessToken).getJWTClaimsSet();
   }
 }

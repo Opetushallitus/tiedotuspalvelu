@@ -74,7 +74,7 @@ public class TiedotuspalveluApiTest {
             .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
             .build();
     var response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-    return new ObjectMapper().readTree(response.body()).get("access_token").asText();
+    return new ObjectMapper().readTree(response.body()).required("access_token").stringValue();
   }
 
   protected RequestPostProcessor tokenFor(String clientId) {
@@ -141,7 +141,7 @@ public class TiedotuspalveluApiTest {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    var id = UUID.fromString(objectMapper.readTree(response).get("id").asText());
+    var id = UUID.fromString(objectMapper.readTree(response).required("id").stringValue());
     return tiedoteRepository.findById(id).orElseThrow();
   }
 

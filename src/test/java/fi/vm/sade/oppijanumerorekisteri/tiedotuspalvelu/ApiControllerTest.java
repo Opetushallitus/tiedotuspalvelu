@@ -684,7 +684,7 @@ public class ApiControllerTest extends TiedotuspalveluApiTest {
             .getResponse()
             .getContentAsString();
 
-    return UUID.fromString(objectMapper.readTree(response).get("id").asText());
+    return UUID.fromString(objectMapper.readTree(response).required("id").stringValue());
   }
 
   private String kituExamineeDetailsJson(String language) {

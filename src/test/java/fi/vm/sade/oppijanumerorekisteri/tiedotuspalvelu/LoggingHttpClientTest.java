@@ -77,11 +77,11 @@ public class LoggingHttpClientTest {
 
                   var message = singleLogMessage(listAppender);
                   var json = objectMapper.readTree(message);
-                  assertEquals(testClientName, json.get("client").asText());
-                  assertEquals(wireMock.baseUrl() + testPath, json.get("url").asText());
+                  assertEquals(testClientName, json.required("client").stringValue());
+                  assertEquals(wireMock.baseUrl() + testPath, json.required("url").stringValue());
                   assertEquals(statusCode, json.get("httpCode").asInt());
                   assertTrue(json.get("latency").asLong() >= 0);
-                  assertNotNull(Instant.parse(json.get("timestamp").asText()));
+                  assertNotNull(Instant.parse(json.required("timestamp").stringValue()));
                   assertNull(json.get("body"));
                 } catch (Exception e) {
                   throw new RuntimeException(e);
@@ -115,7 +115,7 @@ public class LoggingHttpClientTest {
       httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       var json = objectMapper.readTree(singleLogMessage(listAppender));
-      assertEquals(expectedBody, json.get("body").asText());
+      assertEquals(expectedBody, json.required("body").stringValue());
     } finally {
       logger.detachAppender(listAppender);
       logger.setLevel(originalLevel);
@@ -187,7 +187,7 @@ public class LoggingHttpClientTest {
 
                   var json = objectMapper.readTree(singleLogMessage(listAppender));
                   if (testCase.expectBodyLogged()) {
-                    assertEquals(responseBody, json.get("body").asText());
+                    assertEquals(responseBody, json.required("body").stringValue());
                   } else {
                     assertNull(json.get("body"));
                   }
@@ -291,7 +291,7 @@ public class LoggingHttpClientTest {
       assertNotNull(timestamp, "_aws.Timestamp must be present");
       assertTrue(timestamp.isNumber(), "_aws.Timestamp must be numeric (epoch millis)");
       assertEquals(
-          Instant.parse(json.get("timestamp").asText()).toEpochMilli(),
+          Instant.parse(json.required("timestamp").stringValue()).toEpochMilli(),
           timestamp.asLong(),
           "_aws.Timestamp must equal the entry's timestamp in epoch millis");
 
@@ -300,7 +300,8 @@ public class LoggingHttpClientTest {
       assertTrue(directives.isArray(), "_aws.CloudWatchMetrics must be an array");
       assertEquals(1, directives.size(), "_aws.CloudWatchMetrics contains one metric directive");
       var directive = directives.get(0);
-      assertEquals("Tiedotuspalvelu", directive.get("Namespace").asText(), "Namespace must match");
+        assertEquals(
+          "Tiedotuspalvelu", directive.required("Namespace").stringValue(), "Namespace must match");
 
       var dimensions = directive.get("Dimensions");
       assertNotNull(dimensions, "Dimensions must be present");
@@ -308,14 +309,14 @@ public class LoggingHttpClientTest {
       for (var dimensionSet : dimensions) {
         assertTrue(dimensionSet.isArray(), "each Dimensions entry must itself be an array");
         for (var dimensionKey : dimensionSet) {
-          assertTrue(dimensionKey.isTextual(), "dimension key must be a string per EMF spec");
-          var key = dimensionKey.asText();
+          assertTrue(dimensionKey.isString(), "dimension key must be a string per EMF spec");
+          var key = dimensionKey.stringValue();
           var topLevelValue = json.get(key);
           assertNotNull(
               topLevelValue,
               "dimension '" + key + "' must exist as a top-level field per EMF spec");
           assertTrue(
-              topLevelValue.isTextual(),
+              topLevelValue.isString(),
               "dimension '" + key + "' top-level value must be a string per EMF spec");
         }
       }
@@ -326,12 +327,13 @@ public class LoggingHttpClientTest {
       assertEquals(1, metrics.size(), "produces one metric");
       var metric = metrics.get(0);
       assertNotNull(metric.get("Name"), "metric Name must be present");
-      assertTrue(metric.get("Name").isTextual(), "metric Name must be a string");
+        assertTrue(metric.required("Name").isString(), "metric Name must be a string");
+        var metricName = metric.required("Name").stringValue();
       assertNotNull(
-          json.get(metric.get("Name").asText()),
+          json.get(metricName),
           "metric Name should reference a top level field per EMF spec");
       assertTrue(
-          json.get(metric.get("Name").asText()).isNumber(),
+          json.get(metricName).isNumber(),
           "the top level field referenced by Name must be numeric per EMF spec");
     } finally {
       logger.detachAppender(listAppender);
@@ -363,7 +365,7 @@ public class LoggingHttpClientTest {
         MDC.remove(REQUEST_ID_ATTRIBUTE);
       }
       var json = objectMapper.readTree(singleLogMessage(listAppender));
-      assertEquals(requestId, json.get("requestId").asText());
+      assertEquals(requestId, json.required("requestId").stringValue());
 
       listAppender.list.clear();
       httpClient.send(request, HttpResponse.BodyHandlers.discarding());
