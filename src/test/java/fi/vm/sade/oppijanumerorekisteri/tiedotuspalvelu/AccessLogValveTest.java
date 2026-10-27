@@ -23,7 +23,9 @@ import org.springframework.http.ResponseEntity;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "server.forward-headers-strategy=none")
 @AutoConfigureTestRestTemplate
 @ExtendWith(OutputCaptureExtension.class)
 public class AccessLogValveTest {
