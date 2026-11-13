@@ -25,6 +25,9 @@ public class AccessLogConfiguration {
                   logbackValve.setFilename("logback-access.xml");
                   context.getPipeline().addValve(logbackValve);
                 });
+
+        ((TomcatServletWebServerFactory) container)
+            .addConnectorCustomizers(connector -> connector.setMaxLocaleCount(30));
       }
     };
   }
