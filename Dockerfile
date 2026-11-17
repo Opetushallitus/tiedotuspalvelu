@@ -22,7 +22,7 @@ RUN source "$NVM_DIR/nvm.sh" --no-use \
 WORKDIR /app
 RUN mvn --batch-mode clean package -s codebuild-mvn-settings.xml -DskipTests
 
-FROM amazoncorretto:25.0.5@sha256:019e58087ba4c114c817094f70d3d522bcd13e80ce9edbba6e1c67e5700bad63
+FROM amazoncorretto:25.0.5@sha256:15a7151d73f5d0472263aeb091e0d6f4e8e72be0e5c7b0b94a09cf58de369caf
 WORKDIR /app
 
 COPY --from=build /app/target/tiedotuspalvelu-1.0.0.jar application.jar
