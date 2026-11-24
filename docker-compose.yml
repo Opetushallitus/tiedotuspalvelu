@@ -1,7 +1,7 @@
 services:
   oph-tiedotuspalvelu-db:
     container_name: oph-tiedotuspalvelu-db
-    image: postgres:19.0@sha256:908d19593a1444b2d4e85783f718b16e0d40f1baf7518420475df9e5f5ac67a2
+    image: postgres:19.0@sha256:e99b33203b969310f42fd7edf8b3a295ee81a9909a3e2569b3ce87f25b1f4ca0
     environment:
       - POSTGRES_USER=tiedotuspalvelu
       - POSTGRES_DB=tiedotuspalvelu
@@ -17,7 +17,7 @@ services:
 
   oph-tiedotuspalvelu-test-db:
     container_name: oph-tiedotuspalvelu-test-db
-    image: postgres:19.0@sha256:908d19593a1444b2d4e85783f718b16e0d40f1baf7518420475df9e5f5ac67a2
+    image: postgres:19.0@sha256:e99b33203b969310f42fd7edf8b3a295ee81a9909a3e2569b3ce87f25b1f4ca0
     environment:
       - POSTGRES_USER=tiedotuspalvelu
       - POSTGRES_DB=tiedotuspalvelu
